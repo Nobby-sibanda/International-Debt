@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>International Debt — Interactive Dashboard</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1: #fcfcfb;
+    --page: #f9f9f7;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --grid: #e1e0d9;
+    --border: rgba(11,11,11,0.10);
+    --blue: #2a78d6;
+    --orange: #eb6834;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --surface-1: #232322;
+      --page: #0d0d0d;
+      --text-primary: #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted: #898781;
+      --grid: #2c2c2a;
+      --border: rgba(255,255,255,0.10);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1: #232322;
+    --page: #0d0d0d;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --grid: #2c2c2a;
+    --border: rgba(255,255,255,0.10);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page); color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  header { padding: 28px 24px 8px; max-width: 1180px; margin: 0 auto; }
+  header h1 { margin: 0 0 4px; font-size: 1.7rem; }
+  header p { margin: 0; color: var(--text-secondary); }
+  .kpis {
+    max-width: 1180px; margin: 20px auto 0; padding: 0 24px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;
+  }
+  .kpi {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .kpi .label { font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .03em; }
+  .kpi .value { font-size: 1.5rem; font-weight: 600; margin-top: 4px; }
+  main {
+    max-width: 1180px; margin: 24px auto 60px; padding: 0 24px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 20px;
+  }
+  .panel.wide { grid-column: 1 / -1; }
+  .panel {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px 20px 16px;
+  }
+  .panel h2 { margin: 0 0 10px; font-size: 1.05rem; }
+  .panel .caption {
+    margin: 12px 0 0; font-size: 0.86rem; color: var(--text-secondary); line-height: 1.45;
+  }
+  .panel .source { display: block; margin-top: 4px; color: var(--text-muted); font-size: 0.78rem; }
+  footer {
+    max-width: 1180px; margin: 0 auto 40px; padding: 0 24px; color: var(--text-muted); font-size: 0.82rem;
+  }
+  a { color: var(--blue); }
+</style>
+</head>
+<body>
+<header>
+  <h1>International Debt — World Bank Statistics (2024)</h1>
+  <p>Interactive exploration of external debt across 120 countries — grouping, totals, and
+  cross-country comparisons drawn from a SQL analysis layer. Hover any chart for exact values.</p>
+</header>
+
+<div class="kpis">
+  <div class="kpi"><div class="label">Countries covered</div><div class="value">120</div></div>
+  <div class="kpi"><div class="label">Debt indicators tracked</div><div class="value">10</div></div>
+  <div class="kpi"><div class="label">Combined external debt</div><div class="value">$8.94T</div></div>
+  <div class="kpi"><div class="label">Largest single debtor</div><div class="value">China</div></div>
+  <div class="kpi"><div class="label">China's total debt</div><div class="value">$2,420B</div></div>
+  <div class="kpi"><div class="label">Average debt / country</div><div class="value">$75.7B</div></div>
+</div>
+
+<main>
+
+<section class="panel">
+  <h2>Top 10 Countries by Total External Debt</h2>
+  <div>                            <div id="chart-top10" class="plotly-graph-div" style="height:420px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("chart-top10")) {                    Plotly.newPlot(                        "chart-top10",                        [{"hovertemplate":"\u003cb\u003e%{y}\u003c\u002fb\u003e\u003cbr\u003eTotal external debt: $%{x:,.1f}B\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#2a78d6","line":{"width":0}},"orientation":"h","text":["$192B","$193B","$202B","$242B","$421B","$515B","$591B","$605B","$716B","$2,420B"],"textposition":"outside","x":{"dtype":"f8","bdata":"lz0T3nn6Z0C4MB0+wi9oQDGm1r9vOGlAnwzM0W1LbkBDCJuE8lB6QPpTL+vpF4BA2ZtzSwp6gkDo+7bSteuCQLR72u+lY4ZAVfRUvqvnokA="},"y":["Thailand","Ukraine","Colombia","Argentina","Indonesia","Turkiye","Mexico","Brazil","India","China"],"type":"bar"}],                        {"font":{"family":"system-ui, -apple-system, 'Segoe UI', sans-serif","color":"#0b0b0b","size":13},"margin":{"l":10,"r":10,"t":10,"b":10},"hoverlabel":{"font":{"size":13},"bgcolor":"white","bordercolor":"#e1e0d9"},"xaxis":{"tickfont":{"color":"#898781"},"gridcolor":"#e1e0d9","zerolinecolor":"#e1e0d9","linecolor":"#c3c2b7","title":{"text":"Total external debt (US$ billions)"}},"yaxis":{"tickfont":{"color":"#898781"},"gridcolor":"#e1e0d9","zerolinecolor":"#e1e0d9","linecolor":"#c3c2b7","title":{}},"paper_bgcolor":"#fcfcfb","plot_bgcolor":"#fcfcfb","height":420},                        {"displaylogo": false, "responsive": true}                    )                };            </script>        </div>
+  <p class="caption">Countries ranked by total external debt stock in absolute US dollars. Large, industrializing economies dominate this list simply because they borrow (and owe) at a scale proportional to the size of their economies — see the GDP comparison panel below for a size-adjusted view. <span class="source">Source: World Bank IDS, indicator DT.DOD.DECT.CD (External debt stocks, total, DOD, current US$), 2024</span></p>
+</section>
+
+
+<section class="panel">
+  <h2>Bottom 10 Countries by Total External Debt</h2>
+  <div>                            <div id="chart-bottom10" class="plotly-graph-div" style="height:420px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("chart-bottom10")) {                    Plotly.newPlot(                        "chart-bottom10",                        [{"hovertemplate":"\u003cb\u003e%{y}\u003c\u002fb\u003e\u003cbr\u003eTotal external debt: $%{x:,.3f}B\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#eb6834","line":{"width":0}},"orientation":"h","text":["$0.806B","$0.693B","$0.596B","$0.570B","$0.520B","$0.395B","$0.386B","$0.326B","$0.297B","$0.173B"],"textposition":"outside","x":{"dtype":"f8","bdata":"3JO24mrO6T9pQFOjVi\u002fmP+Q+PMKeE+M\u002fHniospc54j97vlsi1KLgPzEP052rRtk\u002f\u002fmfQ\u002fi6t2D+0jsCd2OPUP64vV2W0\u002fNI\u002fun71hKIqxj8="},"y":["St. Vincent and the Grenadines","Eritrea","Solomon Islands","Dominica","Vanuatu","Samoa","Comoros","Sao Tome and Principe","Timor-Leste","Tonga"],"type":"bar"}],                        {"font":{"family":"system-ui, -apple-system, 'Segoe UI', sans-serif","color":"#0b0b0b","size":13},"margin":{"l":10,"r":10,"t":10,"b":10},"hoverlabel":{"font":{"size":13},"bgcolor":"white","bordercolor":"#e1e0d9"},"xaxis":{"tickfont":{"color":"#898781"},"gridcolor":"#e1e0d9","zerolinecolor":"#e1e0d9","linecolor":"#c3c2b7","title":{"text":"Total external debt (US$ billions)"}},"yaxis":{"tickfont":{"color":"#898781"},"gridcolor":"#e1e0d9","zerolinecolor":"#e1e0d9","linecolor":"#c3c2b7","title":{}},"paper_bgcolor":"#fcfcfb","plot_bgcolor":"#fcfcfb","height":420},                        {"displaylogo": false, "responsive": true}                    )                };            </script>        </div>
+  <p class="caption">The 10 countries with the smallest external debt stock in absolute dollar terms — almost entirely small island and micro-economies. A low dollar figure here mostly reflects a tiny economy and limited access to international capital markets, not necessarily prudent debt management; several of these carry a high debt burden relative to their own small GDP (see the country notes in the README). <span class="source">Source: World Bank IDS, indicator DT.DOD.DECT.CD (External debt stocks, total, DOD, current US$), 2024</span></p>
+</section>
+
+
+<section class="panel">
+  <h2>Total External Debt by World Bank Region</h2>
+  <div>                            <div id="chart-region" class="plotly-graph-div" style="height:340px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("chart-region")) {                    Plotly.newPlot(                        "chart-region",                        [{"hovertemplate":"\u003cb\u003e%{y}\u003c\u002fb\u003e\u003cbr\u003eTotal external debt: $%{x:,.1f}B\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#2a78d6","line":{"width":0}},"orientation":"h","text":["$561B","$896B","$900B","$1,169B","$2,000B","$3,409B"],"textposition":"outside","x":{"dtype":"f8","bdata":"NaheALWJgUDVz7gEHwCMQEaw93+8HIxAHJzYoCVFkkD5vQWF2z6fQONmEbq2oqpA"},"y":["Middle East, North Africa, Afghanistan & Pakistan","South Asia","Sub-Saharan Africa ","Europe & Central Asia","Latin America & Caribbean ","East Asia & Pacific"],"type":"bar"}],                        {"font":{"family":"system-ui, -apple-system, 'Segoe UI', sans-serif","color":"#0b0b0b","size":13},"margin":{"l":10,"r":10,"t":10,"b":10},"hoverlabel":{"font":{"size":13},"bgcolor":"white","bordercolor":"#e1e0d9"},"xaxis":{"tickfont":{"color":"#898781"},"gridcolor":"#e1e0d9","zerolinecolor":"#e1e0d9","linecolor":"#c3c2b7","title":{"text":"Total external debt (US$ billions)"}},"yaxis":{"tickfont":{"color":"#898781"},"gridcolor":"#e1e0d9","zerolinecolor":"#e1e0d9","linecolor":"#c3c2b7","title":{}},"paper_bgcolor":"#fcfcfb","plot_bgcolor":"#fcfcfb","height":340},                        {"displaylogo": false, "responsive": true}                    )                };            </script>        </div>
+  <p class="caption">External debt stock summed across all reporting countries in each region. East Asia & Pacific and Latin America & the Caribbean carry the largest combined debt loads, driven by a small number of large middle-income economies (China, Brazil, Mexico) rather than a broad regional pattern. <span class="source">Source: World Bank IDS, indicator DT.DOD.DECT.CD, joined to World Bank country region classification, 2024</span></p>
+</section>
+
+
+<section class="panel">
+  <h2>Total External Debt by Income Level</h2>
+  <div>                            <div id="chart-income" class="plotly-graph-div" style="height:260px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("chart-income")) {                    Plotly.newPlot(                        "chart-income",                        [{"hovertemplate":"\u003cb\u003e%{y}\u003c\u002fb\u003e\u003cbr\u003eTotal external debt: $%{x:,.1f}B\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#1baf7a","line":{"width":0}},"orientation":"h","text":["$4B","$238B","$1,968B","$6,725B"],"textposition":"outside","x":{"dtype":"f8","bdata":"Mq5RetpzDUCW7wLtSsRtQH6kEiMJwJ5ALiSmm1pFukA="},"y":["High income","Low income","Lower middle income","Upper middle income"],"type":"bar"}],                        {"font":{"family":"system-ui, -apple-system, 'Segoe UI', sans-serif","color":"#0b0b0b","size":13},"margin":{"l":10,"r":10,"t":10,"b":10},"hoverlabel":{"font":{"size":13},"bgcolor":"white","bordercolor":"#e1e0d9"},"xaxis":{"tickfont":{"color":"#898781"},"gridcolor":"#e1e0d9","zerolinecolor":"#e1e0d9","linecolor":"#c3c2b7","title":{"text":"Total external debt (US$ billions)"}},"yaxis":{"tickfont":{"color":"#898781"},"gridcolor":"#e1e0d9","zerolinecolor":"#e1e0d9","linecolor":"#c3c2b7","title":{}},"paper_bgcolor":"#fcfcfb","plot_bgcolor":"#fcfcfb","height":260},                        {"displaylogo": false, "responsive": true}                    )                };            </script>        </div>
+  <p class="caption">Upper-middle-income countries hold the largest combined external debt stock, more than 3x lower-middle-income countries and over 20x low-income countries — a reminder that in absolute dollars, debt tracks market access and economic size more than poverty. Low-income countries borrow far less in total but often at far less favorable, less sustainable terms relative to their economies. <span class="source">Source: World Bank IDS + World Bank income-group classification, 2024</span></p>
+</section>
+
+
+<section class="panel">
+  <h2>Top 10 by External Debt as % of GNI</h2>
+  <div>                            <div id="chart-gni" class="plotly-graph-div" style="height:420px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("chart-gni")) {                    Plotly.newPlot(                        "chart-gni",                        [{"hovertemplate":"\u003cb\u003e%{y}\u003c\u002fb\u003e\u003cbr\u003eExternal debt: %{x:.1f}% of GNI\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#4a3aa7","line":{"width":0}},"orientation":"h","text":["90%","94%","101%","109%","114%","115%","123%","151%","182%","351%"],"textposition":"outside","x":{"dtype":"f8","bdata":"1qQEYKOIVkBBvWGzeXhXQOvEv08ZUVlAlZHYW6woW0Db4sUV7IxcQDLt0\u002frh2VxA0\u002fnPRJDKXkDST\u002f\u002fSFdZiQPKF7RNpu2ZAhCUBSCvpdUA="},"y":["Jordan","Rwanda","Ukraine","Montenegro","Zambia","Lao PDR","Mauritius","Senegal","Mongolia","Mozambique"],"type":"bar"}],                        {"font":{"family":"system-ui, -apple-system, 'Segoe UI', sans-serif","color":"#0b0b0b","size":13},"margin":{"l":10,"r":10,"t":10,"b":10},"hoverlabel":{"font":{"size":13},"bgcolor":"white","bordercolor":"#e1e0d9"},"xaxis":{"tickfont":{"color":"#898781"},"gridcolor":"#e1e0d9","zerolinecolor":"#e1e0d9","linecolor":"#c3c2b7","title":{"text":"External debt stocks (% of GNI)"}},"yaxis":{"tickfont":{"color":"#898781"},"gridcolor":"#e1e0d9","zerolinecolor":"#e1e0d9","linecolor":"#c3c2b7","title":{}},"paper_bgcolor":"#fcfcfb","plot_bgcolor":"#fcfcfb","height":420},                        {"displaylogo": false, "responsive": true}                    )                };            </script>        </div>
+  <p class="caption">A size-adjusted view: external debt relative to Gross National Income. Mozambique's external debt exceeds 3.5x its entire national income. This ratio — not the raw dollar figure — is what the IMF/World Bank Debt Sustainability Framework actually uses to flag debt distress risk. <span class="source">Source: World Bank IDS, indicator DT.DOD.DECT.GN.ZS (External debt stocks, % of GNI), 2024</span></p>
+</section>
+
+
+<section class="panel">
+  <h2>Top 10 by Debt Service as % of Exports</h2>
+  <div>                            <div id="chart-tds" class="plotly-graph-div" style="height:420px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("chart-tds")) {                    Plotly.newPlot(                        "chart-tds",                        [{"hovertemplate":"\u003cb\u003e%{y}\u003c\u002fb\u003e\u003cbr\u003eDebt service: %{x:.1f}% of exports\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#e34948","line":{"width":0}},"orientation":"h","text":["38%","40%","42%","43%","43%","47%","48%","49%","63%","96%"],"textposition":"outside","x":{"dtype":"f8","bdata":"+caV5G0gQ0BkngBoc8VDQENRc2EK50RAxNViI7F\u002fRUBfcvV4TKtFQCohzzE8QUdAWGbNnpk3SEB7kis1U51IQPh0bwLSlE9Alfuvl7UMWEA="},"y":["Argentina","Pakistan","Senegal","Colombia","Papua New Guinea","Mozambique","Kazakhstan","Egypt, Arab Rep.","Haiti","El Salvador"],"type":"bar"}],                        {"font":{"family":"system-ui, -apple-system, 'Segoe UI', sans-serif","color":"#0b0b0b","size":13},"margin":{"l":10,"r":10,"t":10,"b":10},"hoverlabel":{"font":{"size":13},"bgcolor":"white","bordercolor":"#e1e0d9"},"xaxis":{"tickfont":{"color":"#898781"},"gridcolor":"#e1e0d9","zerolinecolor":"#e1e0d9","linecolor":"#c3c2b7","title":{"text":"Total debt service (% of exports of goods, services & primary income)"}},"yaxis":{"tickfont":{"color":"#898781"},"gridcolor":"#e1e0d9","zerolinecolor":"#e1e0d9","linecolor":"#c3c2b7","title":{}},"paper_bgcolor":"#fcfcfb","plot_bgcolor":"#fcfcfb","height":420},                        {"displaylogo": false, "responsive": true}                    )                };            </script>        </div>
+  <p class="caption">Share of a country's annual export earnings (goods, services & primary income) consumed just by debt repayments (principal + interest). El Salvador and Haiti spend the largest share of their hard-currency export income servicing debt, leaving less room for imports, reserves, or development spending. <span class="source">Source: World Bank IDS, indicator DT.TDS.DECT.EX.ZS (Total debt service, % of exports), 2024</span></p>
+</section>
+
+
+<section class="panel">
+  <h2>Debt vs. GDP — Top 20 Debtor Countries</h2>
+  <div>                            <div id="chart-scatter" class="plotly-graph-div" style="height:440px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("chart-scatter")) {                    Plotly.newPlot(                        "chart-scatter",                        [{"customdata":[["China",12.919798579350772],["India",19.050559925669045],["Brazil",27.699597160715413],["Mexico",32.30038127746752],["Turkiye",37.89126714892945],["Indonesia",30.15531541771369],["Argentina",37.9652679630045],["Colombia",47.98138076637314],["Ukraine",101.39316269968532],["Thailand",36.23585625468662],["South Africa",43.848370964777445],["Kazakhstan",57.47737475341878],["Egypt, Arab Rep.",40.08963960728526],["Philippines",29.678752544786864],["Viet Nam",27.902684002956875],["Pakistan",34.89402285068588],["Nigeria",43.112986433394134],["Bangladesh",23.213147182038853],["Peru",31.968554085545247],["Uzbekistan",57.892781002701774]],"hovertemplate":"\u003cb\u003e%{customdata[0]}\u003c\u002fb\u003e\u003cbr\u003eGDP: $%{x:,.0f}B\u003cbr\u003eExternal debt: $%{y:,.0f}B\u003cbr\u003eDebt\u002fGDP: %{customdata[1]:.1f}%\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#2a78d6","line":{"color":"white","width":1},"opacity":0.75,"size":{"dtype":"f8","bdata":"CZiYdHFBJ0DyHOq+PyUxQOjhNbj87ThAYIw3AgISPUCd5A\u002fwEg1BQC6uR+DIIztAzD2AT5kVQUC\u002f0hd\u002fdJdFQMJ1GAU\u002f0FZAb2VM4l5OQEDBd+oTVbtDQDGkG8Fk3UlAvcVflFMKQkC9V9kN\u002fLU6QGz92ETHHDlAhJ2gNpVnP0Cb8Zu0nWZDQKuu4SFP5DRAqApkC47FPEAOfkaVPw1KQA=="}},"mode":"markers+text","text":["China","India","","Mexico","Turkiye","","","Colombia","Ukraine","","","","","","","","","","",""],"textfont":{"color":"#52514e","size":11},"textposition":"top center","x":{"dtype":"f8","bdata":"qSanx2pK0kDomjR\u002foGGtQEMBKKqkE6FAaVH3DfWZnEBz1D29fjyVQBPVCAg10ZVA92zZc+zyg0AQow6FEEh6QGfeq8eu2mdAqt4AjBWLgEBViNDpURJ5QONceDSvN3JAxmDPZPVQeED2NBIQvdp8QPc5O3MxxX1AoDFJEvQ7d0DyvXVSYYhvQALdmTHpIXxAE0YAPQY8ckBDlN3FyVZeQA=="},"y":{"dtype":"f8","bdata":"VfRUvqvnokC0e9rvpWOGQOj7ttK164JA2ZtzSwp6gkD6Uy\u002fr6ReAQEMIm4TyUHpAnwzM0W1LbkAxpta\u002fbzhpQLgwHT7CL2hAlz0T3nn6Z0CjIytSqPxlQPA\u002fSXAg8WRAqh9VfSB\u002fY0BEZidtlSBhQM8rre4InWBAOZBj3\u002fU2YEDEhjcDfTBbQPYS\u002fiQpH1pApYqmFzNRV0AlLhfgaJBRQA=="},"type":"scatter"}],                        {"font":{"family":"system-ui, -apple-system, 'Segoe UI', sans-serif","color":"#0b0b0b","size":13},"margin":{"l":10,"r":10,"t":10,"b":10},"hoverlabel":{"font":{"size":13},"bgcolor":"white","bordercolor":"#e1e0d9"},"xaxis":{"tickfont":{"color":"#898781"},"gridcolor":"#e1e0d9","zerolinecolor":"#e1e0d9","linecolor":"#c3c2b7","title":{"text":"GDP (US$ billions, log scale)"},"type":"log"},"yaxis":{"tickfont":{"color":"#898781"},"gridcolor":"#e1e0d9","zerolinecolor":"#e1e0d9","linecolor":"#c3c2b7","title":{"text":"Total external debt (US$ billions, log scale)"},"type":"log"},"paper_bgcolor":"#fcfcfb","plot_bgcolor":"#fcfcfb","height":440},                        {"displaylogo": false, "responsive": true}                    )                };            </script>        </div>
+  <p class="caption">Each bubble is a country among the top 20 largest debtors; both axes are log-scaled (GDP and debt span several orders of magnitude). Bubble size is debt as a share of GDP. Ukraine stands out furthest above the trend line — the only economy here whose external debt exceeds its entire annual GDP, a direct consequence of financing the war against Russia's invasion since 2022. <span class="source">Source: World Bank IDS (DT.DOD.DECT.CD) joined to World Bank national accounts (NY.GDP.MKTP.CD), 2024</span></p>
+</section>
+
+
+<section class="panel">
+  <h2>Debt Composition — China (Largest Debtor)</h2>
+  <div>                            <div id="chart-composition" class="plotly-graph-div" style="height:380px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("chart-composition")) {                    Plotly.newPlot(                        "chart-composition",                        [{"hovertemplate":"\u003cb\u003e%{y}\u003c\u002fb\u003e\u003cbr\u003e$%{x:,.1f}B\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":["#e34948","#4a3aa7","#008300","#e87ba4","#eda100","#1baf7a","#eb6834","#2a78d6"],"line":{"width":0}},"orientation":"h","text":["$0B","$6B","$15B","$15B","$79B","$352B","$504B","$563B","$1,306B","$2,420B"],"textposition":"outside","x":{"dtype":"f8","bdata":"5nXEIRtIVz+IQ0YpoOYXQBNiLqnaXi1AN3AH6pRfLUB\u002fmYmQjNFTQG3FyJvyB3ZARVIz7cyBf0A\u002f+sW1EZWBQKn26Xh8Z5RAVfRUvqvnokA="},"y":["PPG, IDA","Multilateral debt service","PPG, IBRD","IBRD + IDA (World Bank Group)","PPG debt service (annual)","Total debt service (annual)","Public & publicly guaranteed (PPG)","Private nonguaranteed (PNG)","Short-term debt","Total external debt stock"],"type":"bar"}],                        {"font":{"family":"system-ui, -apple-system, 'Segoe UI', sans-serif","color":"#0b0b0b","size":13},"margin":{"l":10,"r":10,"t":10,"b":10},"hoverlabel":{"font":{"size":13},"bgcolor":"white","bordercolor":"#e1e0d9"},"xaxis":{"tickfont":{"color":"#898781"},"gridcolor":"#e1e0d9","zerolinecolor":"#e1e0d9","linecolor":"#c3c2b7","title":{"text":"US$ billions"}},"yaxis":{"tickfont":{"color":"#898781"},"gridcolor":"#e1e0d9","zerolinecolor":"#e1e0d9","linecolor":"#c3c2b7","title":{}},"paper_bgcolor":"#fcfcfb","plot_bgcolor":"#fcfcfb","height":380},                        {"displaylogo": false, "responsive": true}                    )                };            </script>        </div>
+  <p class="caption">Breakdown of China's external debt by instrument type. Short-term debt (due within a year) makes up more than half of the total stock — a structural risk factor, since short-term debt must be rolled over constantly and is far more exposed to sudden shifts in investor confidence or global interest rates than long-term public debt. <span class="source">Source: World Bank IDS, all DT.DOD.* / DT.TDS.* indicators for this country, 2024</span></p>
+</section>
+
+</main>
+
+<footer>
+  Built with Python (pandas), SQLite, and Plotly from World Bank Open Data (CC BY-4.0). See the
+  <a href="../README.md">README</a> for the full methodology, SQL queries, and country-level cause analysis.
+</footer>
+</body>
+</html>

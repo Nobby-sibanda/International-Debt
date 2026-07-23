@@ -1,0 +1,14 @@
+# Data fetch
+requests==2.31.0
+
+# Data handling
+pandas==2.3.3
+
+# Dashboard / charts
+plotly==6.6.0
+
+# Notebook
+jupyter==1.1.1
+notebook==7.4.5
+
+# SQL access -- stdlib sqlite3, queried directly via pandas.read_sql_query

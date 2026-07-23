@@ -1,0 +1,19 @@
+{
+  "DT.DOD.DECT.CD": "External debt stocks, total (DOD, current US$)",
+  "DT.DOD.DPPG.CD": "External debt stocks, public and publicly guaranteed (PPG) (DOD, current US$)",
+  "DT.DOD.DSTC.CD": "External debt stocks, short-term (DOD, current US$)",
+  "DT.DOD.DPNG.CD": "External debt stocks, private nonguaranteed (PNG) (DOD, current US$)",
+  "DT.DOD.MWBG.CD": "IBRD loans and IDA credits (DOD, current US$)",
+  "DT.DOD.MIBR.CD": "PPG, IBRD (DOD, current US$)",
+  "DT.DOD.MIDA.CD": "PPG, IDA (DOD, current US$)",
+  "DT.TDS.DECT.CD": "Debt service on external debt, total (TDS, current US$)",
+  "DT.TDS.DPPG.CD": "Debt service on external debt, public and publicly guaranteed (PPG) (TDS, current US$)",
+  "DT.TDS.MLAT.CD": "Multilateral debt service (TDS, current US$)",
+  "DT.DOD.DECT.GN.ZS": "External debt stocks (% of GNI)",
+  "DT.DOD.DSTC.ZS": "Short-term debt (% of total external debt)",
+  "DT.TDS.DECT.EX.ZS": "Total debt service (% of exports of goods, services and primary income)",
+  "NY.GDP.MKTP.CD": "GDP (current US$)",
+  "NY.GDP.PCAP.CD": "GDP per capita (current US$)",
+  "SP.POP.TOTL": "Population, total",
+  "FI.RES.TOTL.CD": "Total reserves (includes gold, current US$)"
+}

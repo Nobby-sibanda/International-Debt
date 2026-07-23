@@ -1,0 +1,11 @@
+indicator_name,indicator_code,countries_reporting,avg_debt_billions_usd
+"External debt stocks, total (DOD, current US$)",DT.DOD.DECT.CD,118,75.72
+"External debt stocks, public and publicly guaranteed (PPG) (DOD, current US$)",DT.DOD.DPPG.CD,118,30.16
+"External debt stocks, private nonguaranteed (PNG) (DOD, current US$)",DT.DOD.DPNG.CD,92,28.39
+"External debt stocks, short-term (DOD, current US$)",DT.DOD.DSTC.CD,118,20.29
+"Debt service on external debt, total (TDS, current US$)",DT.TDS.DECT.CD,120,11.31
+"Debt service on external debt, public and publicly guaranteed (PPG) (TDS, current US$)",DT.TDS.DPPG.CD,120,4.11
+"PPG, IBRD (DOD, current US$)",DT.DOD.MIBR.CD,63,4.03
+"IBRD loans and IDA credits (DOD, current US$)",DT.DOD.MWBG.CD,116,3.99
+"PPG, IDA (DOD, current US$)",DT.DOD.MIDA.CD,97,2.16
+"Multilateral debt service (TDS, current US$)",DT.TDS.MLAT.CD,120,0.85
