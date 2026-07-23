@@ -34,20 +34,23 @@ uses the current, live-queryable set of stock (`DOD`) and debt-service (`TDS`) i
 ├── notebooks/
 │   └── International_Debt_Analysis.ipynb   # Main SQL analysis notebook (fully executed)
 ├── src/
-│   ├── fetch_data.py        # Pulls IDS + WDI data from the World Bank API
-│   ├── build_db.py          # Loads the CSVs into SQLite
+│   ├── fetch_data.py        # Pulls IDS + WDI data (2024 snapshot) from the World Bank API
+│   ├── fetch_historical.py  # Pulls the full 1970-2024 external debt time series
+│   ├── build_db.py          # Loads the CSVs into SQLite (3 tables)
 │   ├── run_analysis.py      # Runs sql/analysis.sql end-to-end, saves each result set
 │   └── build_dashboard.py   # Generates the interactive HTML dashboard
 ├── sql/
-│   └── analysis.sql         # 13 documented queries: grouping, totals, comparisons
+│   └── analysis.sql         # 15 documented queries: grouping, totals, comparisons, peak-year lookup
 ├── data/
-│   ├── international_debt.csv        # Long-format country x indicator debt table
+│   ├── international_debt.csv        # Long-format country x indicator debt table (2024)
 │   ├── country_reference.csv         # GDP, region, income level, ratios per country
+│   ├── debt_time_series.csv          # Total external debt, every country, 1970-2024
+│   ├── peak_debt_year.csv            # Each country's own historical peak year + debt level
 │   ├── indicator_glossary.json       # indicator_code -> full World Bank name
 │   └── analysis_results/             # CSV output of every query in analysis.sql
 ├── assets/
 │   └── international_debt_dashboard.html   # Interactive Plotly dashboard (open in browser)
-├── international_debt.db    # SQLite database (international_debt + country_reference tables)
+├── international_debt.db    # SQLite database (international_debt + country_reference + debt_history)
 ├── requirements.txt
 └── README.md
 ```
@@ -61,6 +64,7 @@ pip install -r requirements.txt
 
 # Re-fetch live data (optional -- international_debt.db is already committed)
 python src/fetch_data.py
+python src/fetch_historical.py
 python src/build_db.py
 python src/run_analysis.py
 
@@ -76,16 +80,19 @@ xdg-open assets/international_debt_dashboard.html  # Linux
 
 ## SQL Learning Focus
 
-`sql/analysis.sql` is written as a self-contained set of 13 queries, in increasing order of complexity,
+`sql/analysis.sql` is written as a self-contained set of 15 queries, in increasing order of complexity,
 built specifically around three SQL skills:
 
 1. **Grouping** — `GROUP BY` country, indicator, region, and income level to roll thousands of raw rows
    into meaningful summaries.
 2. **Totals** — `SUM`, `AVG`, `COUNT` to turn a country x indicator table into headline numbers ("how
-   much does the world owe in total?", "what's the average debt per indicator?").
+   much does the world owe in total?", "what's the average debt per indicator?", "what's each
+   country's own average debt across all indicators?" — query 14, the figure behind the dashboard's
+   world map).
 3. **Comparing values** — `ORDER BY` + `LIMIT` for top-N/bottom-N rankings, `JOIN`s across the debt and
-   reference tables, and derived ratio columns (debt as % of GDP/GNI/exports) so raw dollar figures can
-   be compared on a level playing field.
+   reference tables, derived ratio columns (debt as % of GDP/GNI/exports) so raw dollar figures can be
+   compared on a level playing field, and a correlated-subquery pattern (query 15) to find each
+   country's own historical peak year from a third `debt_history` time-series table (1970–2024).
 
 Runs on SQLite as shipped, and is portable to Postgres/MySQL with no changes beyond `ROUND()` semantics.
 
@@ -110,39 +117,82 @@ Runs on SQLite as shipped, and is portable to Postgres/MySQL with no changes bey
 
 ## Top 10 Most Indebted Countries (Absolute External Debt)
 
-| # | Country | Total External Debt | Debt / GDP |
-|---|---------|---------------------:|-----------:|
-| 1 | China | $2,419.8B | 12.9% |
-| 2 | India | $716.5B | 19.1% |
-| 3 | Brazil | $605.5B | 27.7% |
-| 4 | Mexico | $591.3B | 32.3% |
-| 5 | Türkiye | $515.0B | 37.9% |
-| 6 | Indonesia | $421.1B | 30.2% |
-| 7 | Argentina | $242.4B | 38.0% |
-| 8 | Colombia | $201.8B | 48.0% |
-| 9 | Ukraine | $193.5B | 101.4% |
-| 10 | Thailand | $191.8B | 36.2% |
+| # | Country | Total External Debt (2024) | Debt / GDP | Historical Peak |
+|---|---------|---------------------:|-----------:|:-----------------|
+| 1 | China | $2,419.8B | 12.9% | 2021 — $2,724.4B |
+| 2 | India | $716.5B | 19.1% | 2024 (still climbing) |
+| 3 | Brazil | $605.5B | 27.7% | 2023 — $607.4B |
+| 4 | Mexico | $591.3B | 32.3% | 2019 — $617.5B |
+| 5 | Türkiye | $515.0B | 37.9% | 2024 (still climbing) |
+| 6 | Indonesia | $421.1B | 30.2% | 2024 (still climbing) |
+| 7 | Argentina | $242.4B | 38.0% | 2019 — $280.7B |
+| 8 | Colombia | $201.8B | 48.0% | 2024 (still climbing) |
+| 9 | Ukraine | $193.5B | 101.4% | 2024 (still climbing) |
+| 10 | Thailand | $191.8B | 36.2% | 2022 — $201.1B |
 
 ## Bottom 10 Least Indebted Countries (Absolute External Debt)
 
-| # | Country | Total External Debt |
-|---|---------|---------------------:|
-| 1 | Tonga | $0.173B |
-| 2 | Timor-Leste | $0.297B |
-| 3 | São Tomé and Príncipe | $0.326B |
-| 4 | Comoros | $0.386B |
-| 5 | Samoa | $0.395B |
-| 6 | Vanuatu | $0.520B |
-| 7 | Dominica | $0.570B |
-| 8 | Solomon Islands | $0.596B |
-| 9 | Eritrea | $0.693B |
-| 10 | St. Vincent and the Grenadines | $0.806B |
+| # | Country | Total External Debt (2024) | Historical Peak |
+|---|---------|---------------------:|:-----------------|
+| 1 | Tonga | $0.173B | 2021 — $0.224B |
+| 2 | Timor-Leste | $0.297B | 2023 — $0.306B |
+| 3 | São Tomé and Príncipe | $0.326B | 2004 — $0.356B |
+| 4 | Comoros | $0.386B | 2024 (still climbing) |
+| 5 | Samoa | $0.395B | 2021 — $0.506B |
+| 6 | Vanuatu | $0.520B | 2024 (still climbing) |
+| 7 | Dominica | $0.570B | 2022 — $0.599B |
+| 8 | Solomon Islands | $0.596B | 2024 (still climbing) |
+| 9 | Eritrea | $0.693B | 2011 — $1.051B |
+| 10 | St. Vincent and the Grenadines | $0.806B | 2024 (still climbing) |
+
+*(Peak years computed from the full 1970-2024 World Bank external-debt time series in
+`data/debt_time_series.csv` — see [Peak Historical Debt Year](#peak-historical-debt-year--what-was-happening)
+below for what drove each peak.)*
 
 > **Important caveat on the bottom 10:** ranking by raw USD debt mechanically rewards small population
 > and GDP size, not sound debt management. Several of these countries — Dominica (~99.5% of GDP),
 > St. Vincent and the Grenadines (113–116% of GDP), Eritrea (~211–219% of GDP, mostly domestic), and
 > Comoros — are rated by the IMF/World Bank at **high risk of, or already in, debt distress**, despite
 > having some of the smallest dollar-denominated debt stocks in the world. See the deep dive below.
+
+---
+
+## Peak Historical Debt Year — What Was Happening
+
+The 2024 figures above are a single snapshot. Pulling the full 1970–2024 time series for each country
+(`src/fetch_historical.py`) and finding each one's own maximum year shows something the snapshot
+hides: **half of the top 10 are still climbing toward a new record in 2024, and half already peaked
+years ago and have since paid down or restructured.** Same split shows up in the bottom 10.
+
+### Top 10 — five still climbing, five past their peak
+
+| Country | Peak year | Peak debt | What was happening |
+|---------|:---------:|----------:|---------------------|
+| **China** | 2021 | $2,724.4B | Peaked the same year the Evergrande property crisis broke — China's second-largest developer defaulted after Beijing's "three red lines" policy cut off refinancing, and Belt & Road overseas lending hit its riskiest point (128 emergency rescue loans worth $240B by end-2021). Debt has declined since as China pulled back from risky overseas lending and pushed property-sector deleveraging. |
+| **India** | 2024 | $716.5B | Still climbing — no single peak event; a steady rise tracking GDP growth and capital-account liberalization, cushioned by large FX reserves. |
+| **Brazil** | 2023 | $607.4B | Essentially flat into 2024. Coincides with Lula's January 2023 return to office and a new fiscal framework passed by Congress in August 2023 (shifting from a deficit target to a 1%-of-GDP surplus target by 2026) — external debt held roughly steady through the transition even as domestic debt kept rising. |
+| **Mexico** | 2019 | $617.5B | Directly tied to Pemex's financial distress: S&P cut Pemex's credit profile in March 2019, Fitch downgraded it to junk in June 2019 (a day after downgrading Mexico's own sovereign rating), citing Pemex's ~$105B debt as a contingent liability worth 9% of GDP. Mexico injected $3.9B to stem the bleeding; debt has eased since as Pemex's balance sheet was de-risked. |
+| **Türkiye** | 2024 | $515.0B | Still climbing — no single peak event yet, though 2025 data shows the debt/GDP ratio itself starting to decline (32.6%). |
+| **Indonesia** | 2024 | $421.1B | Still climbing — driven by Prabowo-era infrastructure/commodity borrowing and a widening fiscal deficit. |
+| **Argentina** | 2019 | $280.7B | Directly tied to the IMF's then-record $57B loan (2018, expanded through 2019) under President Macri, deployed to defend the peso during a currency crisis (peso fell ~50% in 2018). Only $44B was ever disbursed; successor Alberto Fernández refused the remainder. The IMF's own later review concluded the loan "did not deliver on its objectives." Debt fell after the 2020 restructuring. |
+| **Colombia** | 2024 | $201.8B | Still climbing — the government suspended its own fiscal rule in mid-2025 after revenue shortfalls. |
+| **Ukraine** | 2024 | $193.5B | Still climbing, mechanically — wartime financing needs since Russia's 2022 invasion, with no plateau yet. |
+| **Thailand** | 2022 | $201.1B | Coincides with the tail of post-COVID recovery borrowing and the start of the Fed's global rate-hike cycle, which pressured the baht; the Bank of Thailand responded with rate hikes and extended debt-restructuring relief for borrowers through end-2023. Debt eased afterward as the hiking cycle passed. |
+
+### Bottom 10 — mostly still climbing; the historical peaks are climate- or isolation-driven
+
+| Country | Peak year | Peak debt | What was happening |
+|---------|:---------:|----------:|---------------------|
+| **Tonga** | 2021 | $0.224B | Twin shocks: COVID-19 border closures collapsed tourism and remittance-adjacent activity (GDP -2.5% FY2020, -3.5% FY2021), layered on 2020's Cyclone Harold. An IMF Rapid Credit Facility disbursement (Jan 2021) and World Bank pandemic-recovery financing (Nov 2021) landed on top of prior loan commitments — Tonga had actually stopped taking *new* external loans since 2018, so the 2021 peak is mostly earlier disbursements arriving during the COVID emergency, predating the January 2022 volcanic eruption/tsunami. |
+| **Timor-Leste** | 2023 | $0.306B | Not a single incident — a steady, deliberate build-up of concessional infrastructure loans (roads, water/sanitation, an airport) from the Asian Development Bank (~65% of the total), World Bank, and JICA since 2012, with long average maturities (25.5 years). The near-plateau with 2024 reflects policy choice — Timor-Leste funds most spending from its oil Petroleum Fund, not debt — rather than any 2023 shock. |
+| **São Tomé and Príncipe** | 2004 | $0.356B | Pre-HIPC-relief borrowing, including debt collateralized against anticipated Gulf of Guinea oil revenue after 2003 São Tomé–Nigeria Joint Development Zone oil-block auctions raised expectations of oil wealth that never materialized (production still hadn't arrived decades later). Debt fell sharply after the country reached its HIPC completion point in March 2007, when the World Bank/IMF cut it from ~$350M to ~$130M. |
+| **Comoros** | 2024 | $0.386B | Still climbing — chronic remittance dependence and weak export diversification keep pushing debt up; rated high risk of debt distress by the IMF, but no single 2024 trigger event — a gradual trend rather than a shock. |
+| **Samoa** | 2021 | $0.506B | COVID border closures devastated tourism (~20% of GDP), driving GDP contractions of -5% (2020) and -9.7% (2021). Compounded by the 2021 constitutional crisis — a disputed 25/25 election tie between the FAST party and the 22-year incumbent HRPP, unresolved from April to July 2021 — in which China's role as Samoa's largest creditor (over 40% of external debt) was a central campaign issue. Debt has eased significantly since as tourism recovered. |
+| **Vanuatu** | 2024 | $0.520B | At its 2024 peak — the May 2024 Air Vanuatu bankruptcy forced a government-backed debt restructuring after the state absorbed the airline's obligations, compounding a December 2024 major earthquake on top of three cyclones already suffered in 2023. |
+| **Dominica** | 2022 | $0.599B | Reflects sustained post-Hurricane Maria (2017) reconstruction borrowing — Maria destroyed ~90% of the housing stock and caused losses equal to 226% of GDP — compounded by a 16.6% GDP contraction in 2020 from COVID. The World Bank remains Dominica's largest creditor (36% of external public debt); 2022's 5.7% growth reflects tourism recovery layered on top of still-elevated reconstruction-era debt. |
+| **Solomon Islands** | 2024 | $0.596B | Still climbing — driven by declining logging revenue (the traditional export base) and fiscal strain following the 2023 Pacific Games; the IMF is pushing diversification into fisheries and tourism, with no single 2024 shock beyond continued gradual borrowing. |
+| **Eritrea** | 2011 | $1.051B | Coincides with UN Security Council Resolution 2023 (December 2011), which tightened sanctions over Eritrea's alleged support for al-Shabaab and its Djibouti border dispute, restricting diaspora-tax collection and flagging mining-sector transactions. The timing lines up with Eritrea's subsequent decades-long cutoff from concessional external finance — external debt has declined since 2011 even as *total* (mostly domestic) debt kept climbing. |
+| **St. Vincent and the Grenadines** | 2024 | $0.806B | At its 2024 peak — Hurricane Beryl (July 2024), the strongest regional hurricane since 1875, destroyed over 90% of infrastructure in the Southern Grenadines, driving a sharp debt/GDP surge and a subsequent Moody's downgrade. |
 
 ---
 
@@ -283,18 +333,20 @@ double digits overnight, something an absolute-dollar ranking completely hides.
 
 ## Interactive Dashboard
 
-`assets/international_debt_dashboard.html` is a self-contained page — KPI cards plus eight interactive
+`assets/international_debt_dashboard.html` is a self-contained page — KPI cards plus ten interactive
 Plotly panels, each with a caption and source citation underneath, built from the same SQL queries as
 the notebook:
 
 1. **Top 10 Countries by Total External Debt** — headline ranking, absolute US$
 2. **Bottom 10 Countries by Total External Debt** — smallest absolute debtors, with the size-vs-burden caveat
-3. **Total External Debt by World Bank Region** — East Asia & Pacific and Latin America & Caribbean lead
-4. **Total External Debt by Income Level** — upper-middle income carries the most in absolute terms
-5. **Top 10 by External Debt as % of GNI** — size-adjusted debt burden (Mozambique highest, 350.6%)
-6. **Top 10 by Debt Service as % of Exports** — annual repayment burden on export earnings (El Salvador highest)
-7. **Debt vs. GDP — Top 20 Debtors** — log-log bubble chart; Ukraine stands out as the one economy whose debt exceeds its GDP
-8. **Debt Composition — China (Largest Debtor)** — breakdown by instrument type; short-term debt is over half the total
+3. **World Map — Average External Debt per Country** — choropleth of each country's own average across all reported indicators
+4. **Total External Debt by World Bank Region** — East Asia & Pacific and Latin America & Caribbean lead
+5. **Total External Debt by Income Level** — upper-middle income carries the most in absolute terms
+6. **Top 10 by External Debt as % of GNI** — size-adjusted debt burden (Mozambique highest, 350.6%)
+7. **Top 10 by Debt Service as % of Exports** — annual repayment burden on export earnings (El Salvador highest)
+8. **Debt vs. GDP — Top 20 Debtors** — log-log bubble chart; Ukraine stands out as the one economy whose debt exceeds its GDP
+9. **Debt Composition — China (Largest Debtor)** — breakdown by instrument type; short-term debt is over half the total
+10. **Top 10 Most-Indebted — Year of Peak Historical Debt** — which countries are still climbing to a new high in 2024 vs. already past their peak (see [Peak Historical Debt Year](#peak-historical-debt-year--what-was-happening) for the story behind each)
 
 All charts support hover tooltips and are theme-aware (light/dark). Plotly is loaded from a CDN, so an
 internet connection is needed the first time it's opened; the chart data itself is fully embedded and
@@ -329,6 +381,20 @@ works offline after that.
 **Data**
 - [World Bank Open Data API — International Debt Statistics](https://api.worldbank.org/v2/) (source ID 6)
 - [World Bank IDS program page](https://www.worldbank.org/en/programs/debt-statistics)
+
+**Top 10 peak-year events**
+- [Congress.gov — Evergrande Group and China's Debt Challenges](https://www.congress.gov/crs-product/IF11953)
+- [AidData — Belt and Road bailout lending reaches record levels](https://www.aiddata.org/blog/belt-and-road-bailout-lending-reaches-record-levels)
+- [CNN Business — China spent $240 billion bailing out indebted countries](https://www.cnn.com/2023/03/28/economy/china-rescue-lending-belt-and-road-study-intl-hnk/index.html)
+- [Euronews — S&P downgrades debt-laden Pemex](https://www.euronews.com/2019/03/04/sp-downgrades-debt-laden-mexican-state-oil-firm-pemex)
+- [Investing.com — Fitch downgrades Pemex debt to 'junk'](https://investing.com/news/commodities-news/fitch-downgrades-pemex-debt-to-junk-in-fresh-blow-to-mexico-1891081)
+- [AOL/Reuters — Mexico to inject $3.9 billion in Pemex](https://www.aol.com/mexico-inject-3-9-billion-pemex-seeks-prevent-014104506--business.html)
+- [Atlantic Council — IMF throws Argentina a $57 billion lifeline](https://www.atlanticcouncil.org/blogs/new-atlanticist/imf-throws-argentina-a-57-billion-lifeline/)
+- [Buenos Aires Times — IMF report concludes 2018 loan "did not deliver on its objectives"](https://www.batimes.com.ar/news/economy/imf-report-concludes-2018-loan-to-argentina-did-not-deliver-on-its-objectives.phtml)
+- [Global Policy Watch — Brazil's Lula Administration Presents New Fiscal Framework](https://www.globalpolicywatch.com/2023/04/brazils-lula-administration-presents-new-fiscal-framework/)
+- [Statista — Brazil government external debt](https://statista.com/statistics/1057102/brazil-government-external-debt-share-gdp)
+- [Macrotrends — Thailand External Debt 1970–2025](https://macrotrends.net/global-metrics/countries/tha/thailand/external-debt-stock)
+- [AMRO — Thailand's Recovery is Firming but Risks Remain](https://amro-asia.org/thailands-recovery-is-firming-but-risks-and-structural-challenges-remain/)
 
 **Top 10 deep dive**
 - [Congress.gov CRS — China's Economy: Current Trends and Issues](https://www.congress.gov/crs-product/IF11667)
@@ -380,6 +446,22 @@ works offline after that.
 - [IMF — St. Vincent and the Grenadines 2026 Article IV Consultation](https://www.imf.org/en/news/articles/2026/06/12/pr-26205-st-vincent-and-the-grenadines-imf-concludes-2026-art-iv-consult)
 - [iWitness News — Moody's downgrade, Vincentians' burden, July 2026](https://www.iwnsvg.com/2026/07/19/moodys-downgrade-vincentians-burden/)
 - [World Bank — Hurricane Beryl support for St. Vincent and the Grenadines](https://www.worldbank.org/en/news/press-release/2024/10/18/world-bank-to-support-hurricane-beryl-affected-communities-in-st-vincent-and-the-grenadines)
+
+**Bottom 10 peak-year events**
+- [World Bank — Tonga Second Resilience Development Policy Financing](https://documents1.worldbank.org/curated/en/529241654609629236/pdf/Tonga-Second-Resilience-Development-Policy-Financing-Supplemental-Financing.pdf)
+- [IMF Country Report 21/26 — Tonga](https://www.imf.org/-/media/files/publications/cr/2021/english/1tonea2021001.pdf)
+- [IMF — Tonga: Executive Board Approves RCF Disbursement, January 2021](https://www.imf.org/en/news/articles/2021/01/26/pr2122-tonga-imf-executive-board-approves-disbursement-to-tonga)
+- [World Bank — Support for Post-Pandemic Recovery in Tonga, November 2021](https://www.worldbank.org/en/news/press-release/2021/11/24/support-for-post-pandemic-recovery-resilience-and-jobs-in-tonga)
+- [IMF/World Bank — Timor-Leste Joint Debt Sustainability Analysis](https://documents1.worldbank.org/curated/en/966741626972945143/pdf/Timor-Leste-Joint-World-Bank-IMF-Debt-Sustainability-Analysis.pdf)
+- [Macrotrends — Timor-Leste External Debt, 2012–2025](https://macrotrends.net/global-metrics/countries/tls/timor-leste/external-debt-stock)
+- [African Development Bank — Debt Vulnerabilities in São Tomé and Príncipe](https://www.afdb.org/sites/default/files/documents/publications/aeb_volume_11_issue_2_debt_vulnerabilities_in_sao_tome_and_principe_.pdf)
+- [World Bank — São Tomé and Príncipe HIPC Debt Relief](https://documents.worldbank.org/en/publication/documents-reports/documentdetail/602321583529078584/sao-tome-and-principe-enhanced-heavily-indebted-poor-countries-hipc-debt-initiative)
+- [World Socialist Web Site — 2021 Samoan constitutional crisis](https://www.wsws.org/en/articles/2021/05/28/samo-m28.html)
+- [East Asia Forum — Samoa's political crisis reveals cracks in the Pacific](https://eastasiaforum.org/2021/06/09/samoas-political-crisis-reveals-cracks-in-the-pacific/)
+- [World Bank — Dominica country financing/creditor documents](https://documents1.worldbank.org/curated/en/099080525182022651/pdf/BOSIB-f00e50aa-1e38-4af2-a188-30413815e431.pdf)
+- [GFDRR — Dominica Hurricane Maria Post-Disaster Assessment](https://www.gfdrr.org/en/dominica-hurricane-maria-post-disaster-assessment-and-support-recovery-planning)
+- [UN News — Security Council expands sanctions on Eritrea, December 2011](https://news.un.org/en/story/2011/12/397282)
+- [UN Press — Security Council Resolution 2023 (2011) text](https://press.un.org/en/2011/sc10471.doc.htm)
 
 ---
 

@@ -6,6 +6,7 @@ captioned/sourced description under every chart.
 from __future__ import annotations
 
 import sqlite3
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.io as pio
@@ -36,10 +37,12 @@ BASE_LAYOUT = dict(
     paper_bgcolor=SURFACE,
     plot_bgcolor=SURFACE,
     font=dict(family="system-ui, -apple-system, 'Segoe UI', sans-serif", color=INK_PRIMARY, size=13),
-    margin=dict(l=10, r=10, t=10, b=10),
+    margin=dict(l=10, r=40, t=10, b=40),
     hoverlabel=dict(bgcolor="white", font_size=13, bordercolor=GRID),
-    xaxis=dict(gridcolor=GRID, zerolinecolor=GRID, linecolor="#c3c2b7", tickfont=dict(color=INK_MUTED)),
-    yaxis=dict(gridcolor=GRID, zerolinecolor=GRID, linecolor="#c3c2b7", tickfont=dict(color=INK_MUTED)),
+    xaxis=dict(gridcolor=GRID, zerolinecolor=GRID, linecolor="#c3c2b7",
+               tickfont=dict(color=INK_SECONDARY, size=12), automargin=True),
+    yaxis=dict(gridcolor=GRID, zerolinecolor=GRID, linecolor="#c3c2b7",
+               tickfont=dict(color=INK_PRIMARY, size=12.5), automargin=True, ticklabelposition="outside"),
 )
 
 
@@ -192,6 +195,44 @@ def main():
     charts["composition"] = to_div(fig, "chart-composition")
     kpi["composition_country"] = debt[debt.country_code == top_country_code].country_name.iloc[0]
 
+    # ---- 9. World map: average debt per country (GROUP BY country, AVG) ----
+    avg_debt = debt.groupby(["country_code", "country_name"], as_index=False).agg(
+        avg_debt=("debt", "mean"), n_indicators=("debt", "count"))
+    log_z = np.log10(avg_debt.avg_debt.clip(lower=1))
+    fig = go.Figure(go.Choropleth(
+        locations=avg_debt.country_code, z=log_z, locationmode="ISO-3",
+        customdata=avg_debt[["country_name", "n_indicators", "avg_debt"]].values,
+        colorscale=[[0, "#cde2fb"], [0.25, "#6da7ec"], [0.5, "#2a78d6"], [0.75, "#1c5cab"], [1, "#0d366b"]],
+        zmin=log_z.min(), zmax=log_z.max(),
+        colorbar=dict(title="Avg debt", tickfont=dict(color=INK_SECONDARY, size=11),
+                       outlinewidth=0, len=0.8,
+                       tickvals=[7, 8, 9, 10, 11], ticktext=["$10M", "$100M", "$1B", "$10B", "$100B"]),
+        marker_line_color="white", marker_line_width=0.5,
+        hovertemplate="<b>%{customdata[0]}</b><br>Average debt: $%{customdata[2]:,.0f}<br>Across %{customdata[1]} indicators<extra></extra>",
+    ))
+    fig.update_geos(bgcolor=SURFACE, showframe=False, showcoastlines=False,
+                     landcolor="#eceae4", lakecolor=SURFACE, projection_type="natural earth")
+    style(fig, height=460, margin=dict(l=0, r=0, t=0, b=0))
+    charts["world_map"] = to_div(fig, "chart-worldmap")
+
+    # ---- 10. Peak historical debt year -- top 10 most-indebted countries ---
+    peak = pd.read_csv("data/peak_debt_year.csv")
+    top10_names = total_debt.sort_values("debt", ascending=False).head(10).country_name.tolist()
+    peak_top10 = peak[peak.country_name.isin(top10_names)].copy()
+    peak_top10["order"] = peak_top10.country_name.map({n: i for i, n in enumerate(top10_names)})
+    peak_top10 = peak_top10.sort_values("order", ascending=False)
+    is_2024 = peak_top10.year == 2024
+    fig = go.Figure(go.Bar(
+        x=peak_top10.debt / 1e9, y=peak_top10.country_name, orientation="h",
+        marker_color=[ORANGE if y else BLUE for y in is_2024], marker_line_width=0,
+        text=[f"{yr} · ${v:,.0f}B" for yr, v in zip(peak_top10.year, peak_top10.debt / 1e9)],
+        textposition="outside",
+        hovertemplate="<b>%{y}</b><br>Peak year: " + peak_top10.year.astype(str) + "<br>Peak debt: $%{x:,.1f}B<extra></extra>",
+    ))
+    style(fig, height=420, xaxis=dict(**BASE_LAYOUT["xaxis"], title="Historical peak external debt (US$ billions)"),
+          yaxis=dict(**BASE_LAYOUT["yaxis"], title=None))
+    charts["peak_year"] = to_div(fig, "chart-peakyear")
+
     conn.close()
     return kpi, charts, {
         "top10_table": top10.iloc[::-1][["country_name"]].country_name.tolist(),
@@ -200,12 +241,17 @@ def main():
 
 
 PANEL = """
-<section class="panel">
+<section class="panel{wide_class}">
   <h2>{title}</h2>
   {div}
   <p class="caption">{caption} <span class="source">Source: {source}</span></p>
 </section>
 """
+
+
+def panel(title, div, caption, source, wide=False):
+    return PANEL.format(title=title, div=div, caption=caption, source=source,
+                         wide_class=" wide" if wide else "")
 
 PAGE_TEMPLATE = """<!doctype html>
 <html lang="en">
@@ -318,7 +364,7 @@ PAGE_TEMPLATE = """<!doctype html>
 
 def render_page(kpi, charts):
     panels = []
-    panels.append(PANEL.format(
+    panels.append(panel(
         title="Top 10 Countries by Total External Debt",
         div=charts["top10"],
         caption=("Countries ranked by total external debt stock in absolute US dollars. Large, "
@@ -326,8 +372,9 @@ def render_page(kpi, charts):
                   "at a scale proportional to the size of their economies — see the GDP comparison "
                   "panel below for a size-adjusted view."),
         source="World Bank IDS, indicator DT.DOD.DECT.CD (External debt stocks, total, DOD, current US$), 2024",
+        wide=True,
     ))
-    panels.append(PANEL.format(
+    panels.append(panel(
         title="Bottom 10 Countries by Total External Debt",
         div=charts["bottom10"],
         caption=("The 10 countries with the smallest external debt stock in absolute dollar terms — "
@@ -336,8 +383,20 @@ def render_page(kpi, charts):
                   "necessarily prudent debt management; several of these carry a high debt burden "
                   "relative to their own small GDP (see the country notes in the README)."),
         source="World Bank IDS, indicator DT.DOD.DECT.CD (External debt stocks, total, DOD, current US$), 2024",
+        wide=True,
     ))
-    panels.append(PANEL.format(
+    panels.append(panel(
+        title="World Map — Average External Debt per Country",
+        div=charts["world_map"],
+        caption=("Choropleth of each country's own average debt across all reported indicators (total "
+                  "stock, short-term, PPG, PNG, debt service, etc.) — i.e. GROUP BY country, AVG(debt). "
+                  "Color uses a log scale since a handful of large economies are hundreds of times "
+                  "bigger than most others. Hover any country for its exact average and the number of "
+                  "indicators that average is drawn from."),
+        source="World Bank IDS, all DT.DOD.* / DT.TDS.* indicators, averaged per country, 2024",
+        wide=True,
+    ))
+    panels.append(panel(
         title="Total External Debt by World Bank Region",
         div=charts["region"],
         caption=("External debt stock summed across all reporting countries in each region. East Asia "
@@ -346,7 +405,7 @@ def render_page(kpi, charts):
                   "rather than a broad regional pattern."),
         source="World Bank IDS, indicator DT.DOD.DECT.CD, joined to World Bank country region classification, 2024",
     ))
-    panels.append(PANEL.format(
+    panels.append(panel(
         title="Total External Debt by Income Level",
         div=charts["income"],
         caption=("Upper-middle-income countries hold the largest combined external debt stock, more "
@@ -356,7 +415,7 @@ def render_page(kpi, charts):
                   "favorable, less sustainable terms relative to their economies."),
         source="World Bank IDS + World Bank income-group classification, 2024",
     ))
-    panels.append(PANEL.format(
+    panels.append(panel(
         title="Top 10 by External Debt as % of GNI",
         div=charts["gni_ratio"],
         caption=("A size-adjusted view: external debt relative to Gross National Income. Mozambique's "
@@ -364,8 +423,9 @@ def render_page(kpi, charts):
                   "dollar figure — is what the IMF/World Bank Debt Sustainability Framework actually "
                   "uses to flag debt distress risk."),
         source="World Bank IDS, indicator DT.DOD.DECT.GN.ZS (External debt stocks, % of GNI), 2024",
+        wide=True,
     ))
-    panels.append(PANEL.format(
+    panels.append(panel(
         title="Top 10 by Debt Service as % of Exports",
         div=charts["tds_ratio"],
         caption=("Share of a country's annual export earnings (goods, services & primary income) "
@@ -373,8 +433,9 @@ def render_page(kpi, charts):
                   "spend the largest share of their hard-currency export income servicing debt, "
                   "leaving less room for imports, reserves, or development spending."),
         source="World Bank IDS, indicator DT.TDS.DECT.EX.ZS (Total debt service, % of exports), 2024",
+        wide=True,
     ))
-    panels.append(PANEL.format(
+    panels.append(panel(
         title="Debt vs. GDP — Top 20 Debtor Countries",
         div=charts["debt_vs_gdp"],
         caption=("Each bubble is a country among the top 20 largest debtors; both axes are log-scaled "
@@ -385,7 +446,7 @@ def render_page(kpi, charts):
         source="World Bank IDS (DT.DOD.DECT.CD) joined to World Bank national accounts (NY.GDP.MKTP.CD), 2024",
     ))
     composition_country = kpi.get("composition_country", "the top debtor")
-    panels.append(PANEL.format(
+    panels.append(panel(
         title=f"Debt Composition — {composition_country} (Largest Debtor)",
         div=charts["composition"],
         caption=(f"Breakdown of {composition_country}'s external debt by instrument type. Short-term "
@@ -394,6 +455,17 @@ def render_page(kpi, charts):
                   "exposed to sudden shifts in investor confidence or global interest rates than "
                   "long-term public debt."),
         source="World Bank IDS, all DT.DOD.* / DT.TDS.* indicators for this country, 2024",
+    ))
+    panels.append(panel(
+        title="Top 10 Most-Indebted Countries — Year of Peak Historical Debt",
+        div=charts["peak_year"],
+        caption=("For each of the top 10 most-indebted countries (by 2024 external debt stock), the "
+                  "year its total external debt actually peaked historically, and the debt level that "
+                  "year. Several countries' historical peak is 2024 itself (debt is still climbing); "
+                  "others peaked earlier and have since paid down or restructured. See the README's "
+                  "Country Deep Dive for the specific crisis or event tied to each peak year."),
+        source="World Bank IDS, indicator DT.DOD.DECT.CD, full available time series per country",
+        wide=True,
     ))
 
     html = PAGE_TEMPLATE.format(

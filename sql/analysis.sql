@@ -11,6 +11,10 @@
 --                      "DT.DOD.DECT.GN.ZS", "DT.DOD.DSTC.ZS", "DT.TDS.DECT.EX.ZS",
 --                      gdp_current_usd, gdp_per_capita_usd, population,
 --                      total_reserves_usd)
+--   debt_history(country_code, country_name, year, debt)  -- total external debt
+--                                                          -- (DT.DOD.DECT.CD),
+--                                                          -- one row per country x
+--                                                          -- year, 1970-2024
 --
 -- Written for SQLite (as shipped in this repo's international_debt.db) but
 -- kept ANSI-SQL-portable -- runs on Postgres/MySQL with no changes beyond
@@ -165,3 +169,38 @@ WHERE country_name = (
     ORDER BY debt DESC LIMIT 1
 )
 ORDER BY debt_billions_usd DESC;
+
+
+-- 14. Average debt per country across every reported indicator (GROUP BY
+--     country, AVG(debt)) -- the figure the dashboard's world map is colored
+--     by. Different from query 6/7 (which use only the single "total stock"
+--     indicator): this blends total stock, short-term, PPG, PNG, debt
+--     service, etc. into one representative number per country.
+SELECT
+    country_name,
+    ROUND(AVG(debt) / 1e9, 3) AS avg_debt_billions_usd,
+    COUNT(*) AS indicators_averaged
+FROM international_debt
+GROUP BY country_name
+ORDER BY avg_debt_billions_usd DESC
+LIMIT 15;
+
+
+-- 15. Year of peak historical external debt per country -- a self-join
+--     pattern (a country's own maximum year, found via a correlated
+--     subquery) rather than a plain GROUP BY. Restricted to the 10 largest
+--     2024 debtors here; drop the WHERE country_name IN (...) filter to run
+--     it for every country in debt_history.
+SELECT
+    h.country_name,
+    h.year AS peak_year,
+    ROUND(h.debt / 1e9, 1) AS peak_debt_billions_usd
+FROM debt_history h
+WHERE h.debt = (
+    SELECT MAX(h2.debt) FROM debt_history h2 WHERE h2.country_code = h.country_code
+)
+AND h.country_name IN (
+    'China', 'India', 'Brazil', 'Mexico', 'Turkiye', 'Indonesia',
+    'Argentina', 'Colombia', 'Ukraine', 'Thailand'
+)
+ORDER BY peak_debt_billions_usd DESC;
