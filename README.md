@@ -32,13 +32,20 @@ uses the current, live-queryable set of stock (`DOD`) and debt-service (`TDS`) i
 
 ```
 ├── notebooks/
-│   └── International_Debt_Analysis.ipynb   # Main SQL analysis notebook (fully executed)
+│   ├── International_Debt_Analysis.ipynb   # Main SQL analysis notebook (fully executed)
+│   └── ML_Debt_Risk_Analysis.ipynb         # Classification, clustering, forecasting, stats, anomaly detection
 ├── src/
 │   ├── fetch_data.py        # Pulls IDS + WDI data (2024 snapshot) from the World Bank API
 │   ├── fetch_historical.py  # Pulls the full 1970-2024 external debt time series
 │   ├── build_db.py          # Loads the CSVs into SQLite (3 tables)
 │   ├── run_analysis.py      # Runs sql/analysis.sql end-to-end, saves each result set
-│   └── build_dashboard.py   # Generates the interactive HTML dashboard
+│   ├── build_dashboard.py   # Generates the interactive HTML dashboard
+│   ├── build_features.py    # Engineers the country x feature matrix used by all ML scripts below
+│   ├── train_classifier.py  # Debt-distress risk classifier (logistic regression + gradient boosting)
+│   ├── clustering.py        # K-means/hierarchical country debt-profile clustering + PCA
+│   ├── forecast_debt.py     # ARIMA debt forecasts (top 10 debtors) with backtest
+│   ├── statistical_tests.py # ANOVA/Kruskal-Wallis tests on debt/GDP by income level & region
+│   └── anomaly_detection.py # Algorithmic YoY debt-spike detection (z-score + IsolationForest)
 ├── sql/
 │   └── analysis.sql         # 15 documented queries: grouping, totals, comparisons, peak-year lookup
 ├── data/
@@ -47,7 +54,17 @@ uses the current, live-queryable set of stock (`DOD`) and debt-service (`TDS`) i
 │   ├── debt_time_series.csv          # Total external debt, every country, 1970-2024
 │   ├── peak_debt_year.csv            # Each country's own historical peak year + debt level
 │   ├── indicator_glossary.json       # indicator_code -> full World Bank name
-│   └── analysis_results/             # CSV output of every query in analysis.sql
+│   ├── analysis_results/             # CSV output of every query in analysis.sql
+│   ├── debt_distress_labels.csv      # IMF List-of-LIC-DSAs risk ratings (ground truth for the classifier)
+│   ├── country_features.csv          # Engineered feature matrix, all 120 debt-reporting countries
+│   ├── labeled_features.csv          # Feature matrix joined to IMF labels (63 countries)
+│   ├── country_clusters.csv          # K-means/hierarchical cluster assignments + PCA coordinates
+│   └── debt_anomalies.csv            # Per-country-year anomaly flags (z-score + IsolationForest)
+├── models/
+│   ├── classifier_*.pkl, classifier_metrics.json     # Trained classifiers + CV/test metrics
+│   ├── clustering_metrics.json, forecast_metrics.json, statistical_tests.json, anomaly_detection.json
+│   ├── figures/              # Saved PNGs: ROC curve, confusion matrices, PCA scatter, forecasts, boxplots
+│   └── MODEL_CARD.md         # Methodology, results, and honest limitations for every ML addition
 ├── assets/
 │   └── international_debt_dashboard.html   # Interactive Plotly dashboard (open in browser)
 ├── international_debt.db    # SQLite database (international_debt + country_reference + debt_history)
@@ -70,6 +87,15 @@ python src/run_analysis.py
 
 # Full notebook
 jupyter notebook notebooks/International_Debt_Analysis.ipynb
+
+# ML additions -- classification, clustering, forecasting, stats, anomaly detection
+python src/build_features.py
+python src/train_classifier.py
+python src/clustering.py
+python src/forecast_debt.py
+python src/statistical_tests.py
+python src/anomaly_detection.py
+jupyter notebook notebooks/ML_Debt_Risk_Analysis.ipynb
 
 # Interactive dashboard -- open directly in a browser, no Jupyter needed
 open assets/international_debt_dashboard.html      # macOS
@@ -351,6 +377,32 @@ the notebook:
 All charts support hover tooltips and are theme-aware (light/dark). Plotly is loaded from a CDN, so an
 internet connection is needed the first time it's opened; the chart data itself is fully embedded and
 works offline after that.
+
+---
+
+## Machine Learning Additions
+
+The SQL layer above answers *what* the debt data shows. This section adds a modeling layer on the
+same World Bank extract: a supervised classifier, unsupervised clustering, time-series forecasting
+with a backtest, formal hypothesis tests, and algorithmic anomaly detection — each reported honestly,
+including where the results are modest. Full methodology and every metric:
+[`models/MODEL_CARD.md`](models/MODEL_CARD.md); full walkthrough with live-executed code:
+[`notebooks/ML_Debt_Risk_Analysis.ipynb`](notebooks/ML_Debt_Risk_Analysis.ipynb); also surfaced as four
+new panels in the [interactive dashboard](#interactive-dashboard).
+
+| Addition | Method | Headline result |
+|---|---|---|
+| **Debt-distress risk classifier** | Logistic regression + gradient-boosted trees, 5-fold CV, on IMF [List of LIC DSAs](https://www.imf.org/external/Pubs/ft/dsa/DSAlist.pdf) labels (63 PRGT-eligible countries) | AUC ~0.55-0.61 — honestly modest; static balance-sheet ratios only partially explain the IMF's own forward-looking rating |
+| **Country debt-profile clustering** | K-means (k chosen by silhouette) + PCA, all 120 countries, no labels used | 2 clusters: concessional/public-debt-heavy vs. market-financed/private-debt-heavier |
+| **Debt forecasting (top 10 debtors)** | Per-country ARIMA on log(debt), AIC-selected order, 5-year backtest, 2025-2027 forecast | 14.2% average backtest MAPE; largest errors (China, Argentina) line up with known structural breaks |
+| **Statistical testing** | Kruskal-Wallis / ANOVA + Bonferroni-corrected post-hoc, on debt/GDP by income level & region | No significant difference by income level (p=0.38) or region (p=0.44) — absolute-dollar gaps are an economy-size effect, not a burden effect |
+| **Anomaly detection** | Robust z-score (median/MAD) on YoY debt change, cross-checked with IsolationForest | Confirms "peak level" and "YoY shock" are different signals; recovers Argentina's 2018 IMF-crisis jump when scanning 2000+ |
+
+**On the classifier's modest AUC:** this is reported as a genuine finding, not hidden or tuned away.
+The IMF's own debt-distress rating incorporates forward debt-service projections, growth/export
+assumptions, arrears status, and program conditionality — none of which exist in a point-in-time
+balance-sheet snapshot. That static ratios only partially predict the IMF's own classification is
+itself a defensible, useful result.
 
 ---
 

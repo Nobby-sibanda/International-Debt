@@ -1,0 +1,158 @@
+{
+  "n_labeled": 63,
+  "n_high_risk": 29,
+  "n_low_risk": 34,
+  "features": [
+    "debt_pct_gni",
+    "debt_pct_gdp",
+    "debt_service_pct_exports",
+    "debt_service_pct_debt",
+    "reserves_to_debt",
+    "short_term_share",
+    "public_ppg_share",
+    "private_png_share",
+    "multilateral_share",
+    "debt_per_capita_usd",
+    "gdp_per_capita_usd"
+  ],
+  "models": {
+    "logistic_regression": {
+      "cv_roc_auc_mean": 0.608,
+      "cv_roc_auc_std": 0.144,
+      "cv_roc_auc_folds": [
+        0.595,
+        0.357,
+        0.595,
+        0.778,
+        0.714
+      ],
+      "test_roc_auc": 0.571,
+      "test_confusion_matrix": [
+        [
+          5,
+          4
+        ],
+        [
+          3,
+          4
+        ]
+      ],
+      "test_confusion_matrix_labels": [
+        "low/moderate risk",
+        "high risk/distress"
+      ],
+      "feature_importance": {
+        "multilateral_share": -0.491,
+        "private_png_share": -0.346,
+        "reserves_to_debt": -0.343,
+        "income_level_Low income": 0.326,
+        "income_level_Lower middle income": -0.296,
+        "debt_service_pct_debt": 0.281,
+        "gdp_per_capita_usd": -0.26,
+        "debt_pct_gni": 0.199,
+        "debt_service_pct_exports": 0.18,
+        "public_ppg_share": 0.103,
+        "debt_pct_gdp": -0.095,
+        "income_level_High income": -0.057,
+        "income_level_Upper middle income": 0.026,
+        "debt_per_capita_usd": -0.021,
+        "short_term_share": 0.016
+      },
+      "roc_fpr": [
+        0.0,
+        0.1111,
+        0.1111,
+        0.2222,
+        0.2222,
+        0.7778,
+        0.7778,
+        0.8889,
+        0.8889,
+        1.0
+      ],
+      "roc_tpr": [
+        0.0,
+        0.0,
+        0.4286,
+        0.4286,
+        0.5714,
+        0.5714,
+        0.8571,
+        0.8571,
+        1.0,
+        1.0
+      ]
+    },
+    "gradient_boosting": {
+      "cv_roc_auc_mean": 0.527,
+      "cv_roc_auc_std": 0.222,
+      "cv_roc_auc_folds": [
+        0.857,
+        0.31,
+        0.31,
+        0.444,
+        0.714
+      ],
+      "test_roc_auc": 0.635,
+      "test_confusion_matrix": [
+        [
+          6,
+          3
+        ],
+        [
+          4,
+          3
+        ]
+      ],
+      "test_confusion_matrix_labels": [
+        "low/moderate risk",
+        "high risk/distress"
+      ],
+      "feature_importance": {
+        "multilateral_share": 0.21,
+        "private_png_share": 0.159,
+        "reserves_to_debt": 0.156,
+        "debt_service_pct_exports": 0.125,
+        "debt_per_capita_usd": 0.125,
+        "gdp_per_capita_usd": 0.064,
+        "debt_pct_gdp": 0.055,
+        "debt_service_pct_debt": 0.052,
+        "debt_pct_gni": 0.046,
+        "public_ppg_share": 0.004,
+        "income_level_High income": 0.004,
+        "short_term_share": 0.0,
+        "income_level_Low income": 0.0,
+        "income_level_Lower middle income": 0.0,
+        "income_level_Upper middle income": 0.0
+      },
+      "roc_fpr": [
+        0.0,
+        0.1111,
+        0.1111,
+        0.2222,
+        0.2222,
+        0.3333,
+        0.3333,
+        0.5556,
+        0.5556,
+        0.6667,
+        0.6667,
+        1.0
+      ],
+      "roc_tpr": [
+        0.0,
+        0.0,
+        0.2857,
+        0.2857,
+        0.4286,
+        0.4286,
+        0.5714,
+        0.5714,
+        0.8571,
+        0.8571,
+        1.0,
+        1.0
+      ]
+    }
+  }
+}

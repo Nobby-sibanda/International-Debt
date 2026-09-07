@@ -1,0 +1,85 @@
+{
+  "features": [
+    "debt_pct_gni",
+    "debt_pct_gdp",
+    "debt_service_pct_exports",
+    "debt_service_pct_debt",
+    "reserves_to_debt",
+    "short_term_share",
+    "public_ppg_share",
+    "private_png_share",
+    "multilateral_share",
+    "debt_per_capita_usd",
+    "gdp_per_capita_usd"
+  ],
+  "k_scan": [
+    {
+      "k": 2,
+      "inertia": 1065.6409671826204,
+      "silhouette": 0.21691177939143352
+    },
+    {
+      "k": 3,
+      "inertia": 929.8290290172808,
+      "silhouette": 0.2088886743540059
+    },
+    {
+      "k": 4,
+      "inertia": 837.2174770558404,
+      "silhouette": 0.20623638380882822
+    },
+    {
+      "k": 5,
+      "inertia": 766.8210280358787,
+      "silhouette": 0.1953722348621003
+    },
+    {
+      "k": 6,
+      "inertia": 706.5603373885942,
+      "silhouette": 0.13104583526744723
+    },
+    {
+      "k": 7,
+      "inertia": 616.0161472984504,
+      "silhouette": 0.14288189396822562
+    }
+  ],
+  "chosen_k": 2,
+  "kmeans_hierarchical_agreement": 0.892,
+  "pca_explained_variance": [
+    0.304,
+    0.178
+  ],
+  "cluster_profiles": {
+    "0": {
+      "debt_pct_gni": 39.16,
+      "debt_pct_gdp": 37.82,
+      "debt_service_pct_exports": 10.32,
+      "debt_service_pct_debt": 7.26,
+      "reserves_to_debt": 0.38,
+      "short_term_share": 0.05,
+      "public_ppg_share": 0.72,
+      "private_png_share": 0.09,
+      "multilateral_share": 0.16,
+      "debt_per_capita_usd": 626.53,
+      "gdp_per_capita_usd": 2104.54
+    },
+    "1": {
+      "debt_pct_gni": 60.51,
+      "debt_pct_gdp": 57.66,
+      "debt_service_pct_exports": 19.04,
+      "debt_service_pct_debt": 12.81,
+      "reserves_to_debt": 0.32,
+      "short_term_share": 0.15,
+      "public_ppg_share": 0.48,
+      "private_png_share": 0.33,
+      "multilateral_share": 0.05,
+      "debt_per_capita_usd": 4001.82,
+      "gdp_per_capita_usd": 7482.77
+    }
+  },
+  "cluster_sizes": {
+    "0": 70,
+    "1": 50
+  }
+}

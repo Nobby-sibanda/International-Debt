@@ -12,3 +12,9 @@ jupyter==1.1.1
 notebook==7.4.5
 
 # SQL access -- stdlib sqlite3, queried directly via pandas.read_sql_query
+
+# ML: classification, clustering, forecasting, stats, anomaly detection
+scikit-learn==1.8.0
+statsmodels==0.14.6
+scipy==1.17.1
+matplotlib==3.10.8

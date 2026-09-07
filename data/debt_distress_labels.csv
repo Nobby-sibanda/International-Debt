@@ -1,0 +1,70 @@
+country_name_imf,country_name,risk_rating,publication_date,sustainability_assessment,prgt_ida_blend
+Afghanistan,Afghanistan,High,2021-06-28,Sustainable,No
+Bangladesh,Bangladesh,Moderate,2026-01-30,,No
+Benin,Benin,Moderate,2025-07-14,,No
+Bhutan,Bhutan,Moderate,2026-01-27,,No
+Burkina Faso,Burkina Faso,Moderate,2026-03-23,,No
+Burundi,Burundi,High,2023-07-25,Sustainable,No
+Cambodia,Cambodia,Low,2025-12-02,,No
+Cameroon,Cameroon,High,2025-03-24,Sustainable,Yes
+Cabo Verde,Cabo Verde,Moderate,2026-02-26,,Yes
+Central African Republic,Central African Republic,High,2025-06-23,Sustainable,No
+Chad,Chad,High,2025-08-13,Sustainable,No
+Comoros,Comoros,High,2026-02-19,Sustainable,No
+"Congo, Democratic Republic of","Congo, Dem. Rep.",Moderate,2025-07-16,,No
+"Congo, Republic of","Congo, Rep.",In debt distress,2025-03-24,Sustainable,No
+Cote d'Ivoire,Cote d'Ivoire,Moderate,2026-02-11,,No
+Djibouti,Djibouti,In debt distress,2025-09-22,Unsustainable,No
+Dominica,Dominica,Moderate,2025-06-12,,Yes
+Eritrea,Eritrea,Unrated,,,No
+Ethiopia,Ethiopia,In debt distress,2026-01-30,Unsustainable,No
+"Gambia, The","Gambia, The",High,2025-12-23,Sustainable,No
+Ghana,Ghana,High,2025-12-22,Sustainable,No
+Grenada,Grenada,In debt distress,2025-02-04,Sustainable,Yes
+Guinea,Guinea,Moderate,2024-05-17,,No
+Guinea-Bissau,Guinea-Bissau,High,2025-07-07,Sustainable,No
+Haiti,Haiti,High,2024-12-10,Sustainable,No
+Honduras,Honduras,Low,2024-12-10,,No
+Kenya,Kenya,High,2024-11-01,Sustainable,Yes
+Kiribati,Kiribati,High,2025-07-10,Sustainable,No
+Kyrgyz Republic,Kyrgyz Republic,Moderate,2025-06-04,,No
+Lao P.D.R.,Lao PDR,In debt distress,2026-02-20,Unsustainable,No
+Lesotho,Lesotho,Moderate,2025-09-18,,No
+Liberia,Liberia,Moderate,2025-11-07,,No
+Madagascar,Madagascar,Moderate,2025-03-21,,No
+Malawi,Malawi,In debt distress,2025-08-06,Unsustainable,No
+Maldives,Maldives,High,2024-05-13,Unsustainable,No
+Mali,Mali,Moderate,2025-09-10,,No
+Marshall Islands,Marshall Islands,Moderate,2025-12-04,,No
+Mauritania,Mauritania,Moderate,2026-02-05,,No
+Micronesia,"Micronesia, Fed. Sts.",Moderate,2024-03-04,,No
+Moldova,Moldova,Low,2026-03-05,,No
+Mozambique,Mozambique,High,2026-02-19,Unsustainable,No
+Myanmar,Myanmar,Low,2021-01-28,,No
+Nepal,Nepal,Low,2025-10-06,,No
+Nicaragua,Nicaragua,Moderate,2026-01-26,,No
+Niger,Niger,High,2026-03-31,Sustainable,No
+Papua New Guinea,Papua New Guinea,High,2025-06-18,Sustainable,Yes
+Rwanda,Rwanda,Moderate,2025-12-04,,No
+Samoa,Samoa,Moderate,2025-01-31,,No
+Sao Tome and Principe,Sao Tome and Principe,In debt distress,2025-12-23,Sustainable,No
+Senegal,Senegal,Moderate,2023-07-07,,No
+Sierra Leone,Sierra Leone,High,2026-02-13,Sustainable,No
+Solomon Islands,Solomon Islands,Low,2025-02-25,,No
+Somalia,"Somalia, Fed. Rep.",Moderate,2025-12-16,,No
+South Sudan,South Sudan,High,2024-06-10,Sustainable,No
+St. Vincent and the Grenadines,St. Vincent and the Grenadines,High,2024-07-22,Sustainable,Yes
+Sudan,Sudan,In debt distress,2021-07-01,Sustainable,No
+Tajikistan,Tajikistan,High,2025-07-08,Sustainable,No
+Tanzania,Tanzania,Moderate,2025-07-03,,No
+Timor Leste,Timor-Leste,Moderate,2025-09-26,,Yes
+Togo,Togo,Moderate,2025-07-11,,No
+Tonga,Tonga,High,2025-11-10,Sustainable,No
+Tuvalu,Tuvalu,High,2025-09-12,Sustainable,No
+Uganda,Uganda,Moderate,2026-02-03,,No
+Uzbekistan,Uzbekistan,Low,2025-06-24,,Yes
+Vanuatu,Vanuatu,Moderate,2025-09-25,,No
+"Yemen, Republic of","Yemen, Rep.",Moderate,2014-09-24,,No
+Zambia,Zambia,High,2026-02-02,Sustainable,No
+Zimbabwe,Zimbabwe,In debt distress,2025-10-02,Unsustainable,Yes
+Guyana,Guyana,Low,,,No

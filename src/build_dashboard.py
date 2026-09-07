@@ -5,11 +5,13 @@ captioned/sourced description under every chart.
 """
 from __future__ import annotations
 
+import json
 import sqlite3
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.io as pio
+from plotly.subplots import make_subplots
 
 YEAR = 2024
 SOURCE = f"World Bank International Debt Statistics (IDS), {YEAR} data, api.worldbank.org"
@@ -62,6 +64,7 @@ def main():
     debt = pd.read_sql_query("SELECT * FROM international_debt", conn)
     ref = pd.read_sql_query("SELECT * FROM country_reference", conn)
     total_debt = debt[debt.indicator_code == "DT.DOD.DECT.CD"][["country_name", "country_code", "debt"]]
+    hist_series = pd.read_csv("data/debt_time_series.csv")
 
     charts = {}
 
@@ -233,6 +236,98 @@ def main():
           yaxis=dict(**BASE_LAYOUT["yaxis"], title=None))
     charts["peak_year"] = to_div(fig, "chart-peakyear")
 
+    # ---- 11. ML: debt-distress classifier -- ROC curve ----------------------
+    clf_metrics = json.load(open("models/classifier_metrics.json"))
+    fig = go.Figure()
+    colors_by_model = {"logistic_regression": BLUE, "gradient_boosting": ORANGE}
+    for name, m in clf_metrics["models"].items():
+        label = name.replace("_", " ").title()
+        fig.add_trace(go.Scatter(
+            x=m["roc_fpr"], y=m["roc_tpr"], mode="lines",
+            name=f"{label} (test AUC={m['test_roc_auc']:.2f})",
+            line=dict(color=colors_by_model[name], width=2.5),
+            hovertemplate="FPR %{x:.2f}, TPR %{y:.2f}<extra>" + label + "</extra>",
+        ))
+    fig.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode="lines", name="chance",
+                              line=dict(color=INK_MUTED, width=1, dash="dash"), hoverinfo="skip"))
+    style(fig, height=420,
+          xaxis=dict(**BASE_LAYOUT["xaxis"], title="False positive rate", range=[0, 1]),
+          yaxis=dict(**BASE_LAYOUT["yaxis"], title="True positive rate", range=[0, 1]),
+          legend=dict(orientation="h", y=-0.18))
+    charts["classifier_roc"] = to_div(fig, "chart-clf-roc")
+    kpi["clf_best_auc"] = max(m["cv_roc_auc_mean"] for m in clf_metrics["models"].values())
+    kpi["clf_n_labeled"] = clf_metrics["n_labeled"]
+
+    # ---- 12. ML: debt-distress classifier -- top feature coefficients -------
+    lr_importance = clf_metrics["models"]["logistic_regression"]["feature_importance"]
+    top_feats = dict(list(lr_importance.items())[:8])
+    feat_names = list(top_feats.keys())[::-1]
+    feat_vals = list(top_feats.values())[::-1]
+    fig = go.Figure(go.Bar(
+        x=feat_vals, y=feat_names, orientation="h",
+        marker_color=[RED if v > 0 else BLUE for v in feat_vals], marker_line_width=0,
+        hovertemplate="<b>%{y}</b><br>coefficient: %{x:.3f}<extra></extra>",
+    ))
+    fig.add_vline(x=0, line_color=GRID)
+    style(fig, height=380, xaxis=dict(**BASE_LAYOUT["xaxis"], title="Standardized logistic-regression coefficient"),
+          yaxis=dict(**BASE_LAYOUT["yaxis"], title=None))
+    charts["classifier_features"] = to_div(fig, "chart-clf-features")
+
+    # ---- 13. ML: country debt-profile clusters (PCA) -------------------------
+    clusters = pd.read_csv("data/country_clusters.csv")
+    cluster_metrics = json.load(open("models/clustering_metrics.json"))
+    fig = go.Figure()
+    for c in sorted(clusters.kmeans_cluster.unique()):
+        sub = clusters[clusters.kmeans_cluster == c]
+        fig.add_trace(go.Scatter(
+            x=sub.pca_1, y=sub.pca_2, mode="markers", name=f"Cluster {c}",
+            marker=dict(size=9, color=CATEGORICAL[c % len(CATEGORICAL)], opacity=0.8,
+                        line=dict(width=1, color="white")),
+            customdata=sub[["country_name", "debt_pct_gdp", "income_level"]].values,
+            hovertemplate="<b>%{customdata[0]}</b><br>Debt/GDP: %{customdata[1]:.0f}%<br>"
+                          "Income: %{customdata[2]}<extra>Cluster " + str(c) + "</extra>",
+        ))
+    ev = cluster_metrics["pca_explained_variance"]
+    style(fig, height=460,
+          xaxis=dict(**BASE_LAYOUT["xaxis"], title=f"PC1 ({ev[0]:.0%} variance explained)"),
+          yaxis=dict(**BASE_LAYOUT["yaxis"], title=f"PC2 ({ev[1]:.0%} variance explained)"),
+          legend=dict(orientation="h", y=-0.16))
+    charts["clusters"] = to_div(fig, "chart-clusters")
+    kpi["cluster_k"] = cluster_metrics["chosen_k"]
+
+    # ---- 14. ML: 2025-2027 debt forecast, top 10 debtors ---------------------
+    forecast = json.load(open("models/forecast_metrics.json"))
+    fc_top10 = total_debt.sort_values("debt", ascending=False).head(10).country_name.tolist()
+    fig = make_subplots(rows=2, cols=5, subplot_titles=fc_top10, vertical_spacing=0.16, horizontal_spacing=0.045)
+    for i, country in enumerate(fc_top10):
+        row, col = i // 5 + 1, i % 5 + 1
+        hist_c = hist_series[hist_series.country_name == country].sort_values("year")
+        fdata = forecast[country]
+        fyears = fdata["forecast_years"]
+        fmean = [fdata["forecast_debt_usd"][str(y)] / 1e9 for y in fyears]
+        flo = [fdata["forecast_ci_lower_usd"][str(y)] / 1e9 for y in fyears]
+        fhi = [fdata["forecast_ci_upper_usd"][str(y)] / 1e9 for y in fyears]
+
+        fig.add_trace(go.Scatter(x=hist_c.year, y=hist_c.debt / 1e9, mode="lines",
+                                  line=dict(color=INK_SECONDARY, width=1.3), showlegend=False,
+                                  hovertemplate="%{x}: $%{y:.0f}B<extra>" + country + " actual</extra>"),
+                      row=row, col=col)
+        fig.add_trace(go.Scatter(x=fyears + fyears[::-1], y=fhi + flo[::-1], fill="toself",
+                                  fillcolor="rgba(42,120,214,0.18)", line=dict(width=0),
+                                  showlegend=False, hoverinfo="skip"), row=row, col=col)
+        fig.add_trace(go.Scatter(x=fyears, y=fmean, mode="lines+markers",
+                                  line=dict(color=BLUE, width=2), marker=dict(size=4), showlegend=False,
+                                  hovertemplate="%{x}: $%{y:.0f}B<extra>" + country + " forecast</extra>"),
+                      row=row, col=col)
+    fig.update_layout(**{k: v for k, v in BASE_LAYOUT.items() if k not in ("xaxis", "yaxis", "margin")},
+                       height=520, margin=dict(l=10, r=10, t=30, b=10))
+    fig.update_xaxes(gridcolor=GRID, tickfont=dict(size=9))
+    fig.update_yaxes(gridcolor=GRID, tickfont=dict(size=9), title_text="US$B", col=1)
+    fig.update_annotations(font_size=11)
+    charts["forecast"] = to_div(fig, "chart-forecast")
+    avg_mape = np.mean([forecast[c]["backtest_mape"] for c in fc_top10])
+    kpi["forecast_avg_mape"] = avg_mape
+
     conn.close()
     return kpi, charts, {
         "top10_table": top10.iloc[::-1][["country_name"]].country_name.tolist(),
@@ -327,6 +422,11 @@ PAGE_TEMPLATE = """<!doctype html>
     margin: 12px 0 0; font-size: 0.86rem; color: var(--text-secondary); line-height: 1.45;
   }}
   .panel .source {{ display: block; margin-top: 4px; color: var(--text-muted); font-size: 0.78rem; }}
+  .section-divider {{
+    grid-column: 1 / -1; margin: 8px 0 -4px; padding-top: 16px; border-top: 1px solid var(--border);
+  }}
+  .section-divider h2 {{ margin: 0 0 4px; font-size: 1.25rem; }}
+  .section-divider p {{ margin: 0; color: var(--text-secondary); font-size: 0.9rem; }}
   footer {{
     max-width: 1180px; margin: 0 auto 40px; padding: 0 24px; color: var(--text-muted); font-size: 0.82rem;
   }}
@@ -347,6 +447,9 @@ PAGE_TEMPLATE = """<!doctype html>
   <div class="kpi"><div class="label">Largest single debtor</div><div class="value">{top_country}</div></div>
   <div class="kpi"><div class="label">{top_country}'s total debt</div><div class="value">${top_debt_bn:,.0f}B</div></div>
   <div class="kpi"><div class="label">Average debt / country</div><div class="value">${avg_debt_bn:,.1f}B</div></div>
+  <div class="kpi"><div class="label">Distress classifier CV AUC</div><div class="value">{clf_best_auc:.2f}</div></div>
+  <div class="kpi"><div class="label">Debt-profile clusters (k)</div><div class="value">{cluster_k}</div></div>
+  <div class="kpi"><div class="label">Forecast backtest MAPE (top 10 avg)</div><div class="value">{forecast_avg_mape:.1%}</div></div>
 </div>
 
 <main>
@@ -468,6 +571,58 @@ def render_page(kpi, charts):
         wide=True,
     ))
 
+    panels.append(
+        '<div class="section-divider"><h2>Machine Learning Additions</h2>'
+        '<p>Supervised classification, unsupervised clustering, and time-series forecasting '
+        'layered on top of the SQL analysis above. Full methodology, honest limitations, and '
+        'every metric: <a href="../models/MODEL_CARD.md">models/MODEL_CARD.md</a> and the '
+        '<a href="../notebooks/ML_Debt_Risk_Analysis.html">ML notebook</a>.</p></div>'
+    )
+    panels.append(panel(
+        title=f"Predicting Debt-Distress Risk — ROC Curve ({kpi['clf_n_labeled']} labeled countries)",
+        div=charts["classifier_roc"],
+        caption=("Logistic regression and gradient-boosted trees predicting IMF High/In-distress vs. "
+                  "Low/Moderate risk from debt-composition and macro ratios, evaluated on a held-out "
+                  "test set (5-fold CV AUC reported in the KPI above). AUC ~0.55-0.6 is honestly modest: "
+                  "the IMF's own rating bakes in forward debt-service projections and program "
+                  "conditionality that a balance-sheet snapshot can't see — reported as-is rather than "
+                  "tuned to look better."),
+        source="IMF List of LIC DSAs (PRGT-eligible countries) joined to World Bank IDS/WDI ratios",
+    ))
+    panels.append(panel(
+        title="What Predicts High Debt-Distress Risk?",
+        div=charts["classifier_features"],
+        caption=("Standardized logistic-regression coefficients — positive (red) pushes toward "
+                  "high-risk, negative (blue) toward low/moderate. Multilateral debt share and reserve "
+                  "coverage are the strongest protective factors; low-income classification is the "
+                  "strongest risk factor, even controlling for the debt ratios themselves."),
+        source="src/train_classifier.py logistic-regression coefficients",
+    ))
+    panels.append(panel(
+        title="Country Debt-Profile Clusters (K-means + PCA)",
+        div=charts["clusters"],
+        caption=("Unsupervised segmentation (no distress labels used) across all 120 debt-reporting "
+                  "countries on 11 debt-composition and macro ratios, projected to 2D with PCA. K "
+                  "chosen by max silhouette score. The two clusters read roughly as “concessional / "
+                  "public-debt-heavy, lower income” vs. “market-financed / private-debt-heavier, higher "
+                  "income” — silhouette scores (0.13-0.22) are modest, so read this as a continuum with "
+                  "a rough center-of-mass split, not sharply separated groups."),
+        source="World Bank IDS/WDI ratios, K-means (k=2 by silhouette) + PCA",
+        wide=True,
+    ))
+    panels.append(panel(
+        title="External Debt Forecast, 2025-2027 — Top 10 Debtors",
+        div=charts["forecast"],
+        caption=("Per-country ARIMA on log(debt), order chosen by AIC grid search, 95% confidence band "
+                  "shaded. Backtested by holding out actual 2020-2024 values before producing this "
+                  "forecast on the full series; average backtest MAPE across the 10 countries is shown "
+                  "in the KPI above. The two largest backtest errors — China and Argentina — are exactly "
+                  "the two countries whose debt history includes a sharp structural break (Evergrande-era "
+                  "deleveraging; the 2020 sovereign restructuring), which a linear ARIMA can't anticipate."),
+        source="World Bank IDS full time series (1970-2024), src/forecast_debt.py",
+        wide=True,
+    ))
+
     html = PAGE_TEMPLATE.format(
         year=YEAR,
         n_countries=kpi["n_countries"],
@@ -476,6 +631,9 @@ def render_page(kpi, charts):
         top_country=kpi["top_country"],
         top_debt_bn=kpi["top_debt_bn"],
         avg_debt_bn=kpi["avg_debt_bn"],
+        clf_best_auc=kpi["clf_best_auc"],
+        cluster_k=kpi["cluster_k"],
+        forecast_avg_mape=kpi["forecast_avg_mape"],
         panels="\n".join(panels),
     )
     return html

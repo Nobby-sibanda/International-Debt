@@ -1,0 +1,186 @@
+{
+  "z_threshold": 2.5,
+  "top10_vs_readme": {
+    "China": {
+      "readme_peak_year": 2021,
+      "auto_flagged_years_zscore": [
+        1982,
+        1987,
+        2010,
+        2015
+      ],
+      "auto_flagged_years_isoforest": [
+        2007,
+        2009,
+        2010,
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "flagged_within_1yr_of_readme_peak": false
+    },
+    "India": {
+      "readme_peak_year": 2024,
+      "auto_flagged_years_zscore": [
+        2006,
+        2007
+      ],
+      "auto_flagged_years_isoforest": [
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "flagged_within_1yr_of_readme_peak": false
+    },
+    "Brazil": {
+      "readme_peak_year": 2023,
+      "auto_flagged_years_zscore": [
+        1971,
+        1972,
+        1974,
+        1978
+      ],
+      "auto_flagged_years_isoforest": [
+        2010,
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "flagged_within_1yr_of_readme_peak": false
+    },
+    "Mexico": {
+      "readme_peak_year": 2019,
+      "auto_flagged_years_zscore": [
+        1980,
+        1981
+      ],
+      "auto_flagged_years_isoforest": [
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "flagged_within_1yr_of_readme_peak": false
+    },
+    "Turkiye": {
+      "readme_peak_year": 2024,
+      "auto_flagged_years_zscore": [
+        1977
+      ],
+      "auto_flagged_years_isoforest": [
+        2013,
+        2017,
+        2018,
+        2022,
+        2023,
+        2024
+      ],
+      "flagged_within_1yr_of_readme_peak": false
+    },
+    "Indonesia": {
+      "readme_peak_year": 2024,
+      "auto_flagged_years_zscore": [
+        1971
+      ],
+      "auto_flagged_years_isoforest": [
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2024
+      ],
+      "flagged_within_1yr_of_readme_peak": false
+    },
+    "Argentina": {
+      "readme_peak_year": 2019,
+      "auto_flagged_years_zscore": [
+        1979,
+        1980,
+        1981,
+        1995,
+        2005
+      ],
+      "auto_flagged_years_isoforest": [],
+      "flagged_within_1yr_of_readme_peak": false
+    },
+    "Colombia": {
+      "readme_peak_year": 2024,
+      "auto_flagged_years_zscore": [
+        1977
+      ],
+      "auto_flagged_years_isoforest": [],
+      "flagged_within_1yr_of_readme_peak": false
+    },
+    "Ukraine": {
+      "readme_peak_year": 2024,
+      "auto_flagged_years_zscore": [
+        1993,
+        1994,
+        1995,
+        2001,
+        2006,
+        2007
+      ],
+      "auto_flagged_years_isoforest": [
+        1993,
+        1995,
+        1996,
+        1997
+      ],
+      "flagged_within_1yr_of_readme_peak": false
+    },
+    "Thailand": {
+      "readme_peak_year": 2022,
+      "auto_flagged_years_zscore": [
+        1978,
+        1995
+      ],
+      "auto_flagged_years_isoforest": [],
+      "flagged_within_1yr_of_readme_peak": false
+    }
+  },
+  "total_flagged_country_years_zscore": 524,
+  "total_flagged_country_years_both_methods": 63
+}

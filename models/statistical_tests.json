@@ -1,0 +1,39 @@
+{
+  "income_level": {
+    "label": "Debt/GDP by income level",
+    "group_sizes": {
+      "Low income": 20,
+      "Lower middle income": 43,
+      "Upper middle income": 51
+    },
+    "shapiro_all_normal": false,
+    "levene_p": 0.9313,
+    "anova_f": 0.0562,
+    "anova_p": 0.9454,
+    "kruskal_h": 1.9319,
+    "kruskal_p": 0.3806,
+    "recommended_test": "Kruskal-Wallis",
+    "significant_at_0.05": false,
+    "posthoc_significant_pairs": []
+  },
+  "region": {
+    "label": "Debt/GDP by region",
+    "group_sizes": {
+      "East Asia & Pacific": 16,
+      "Europe & Central Asia": 18,
+      "Latin America & Caribbean ": 21,
+      "Middle East, North Africa, Afghanistan & Pakistan": 11,
+      "South Asia": 6,
+      "Sub-Saharan Africa ": 43
+    },
+    "shapiro_all_normal": false,
+    "levene_p": 0.4824,
+    "anova_f": 0.2343,
+    "anova_p": 0.9467,
+    "kruskal_h": 4.7796,
+    "kruskal_p": 0.4434,
+    "recommended_test": "Kruskal-Wallis",
+    "significant_at_0.05": false,
+    "posthoc_significant_pairs": []
+  }
+}
