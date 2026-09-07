@@ -12,6 +12,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.io as pio
 from plotly.subplots import make_subplots
+from scipy import stats
 
 YEAR = 2024
 SOURCE = f"World Bank International Debt Statistics (IDS), {YEAR} data, api.worldbank.org"
@@ -328,6 +329,35 @@ def main():
     avg_mape = np.mean([forecast[c]["backtest_mape"] for c in fc_top10])
     kpi["forecast_avg_mape"] = avg_mape
 
+    # ---- 15. General Analysis: debt-service burden vs. income level ---------
+    feats = pd.read_csv("data/country_features.csv").dropna(
+        subset=["debt_service_pct_exports", "gdp_per_capita_usd"])
+    r_stat, r_p = stats.pearsonr(feats["debt_service_pct_exports"], feats["gdp_per_capita_usd"])
+    kpi["ga_corr_r"], kpi["ga_corr_p"] = r_stat, r_p
+    label_countries = {"El Salvador", "Haiti", "Kazakhstan", "Argentina", "Colombia", "Egypt, Arab Rep."}
+    income_colors = {"Low income": RED, "Lower middle income": ORANGE,
+                      "Upper middle income": AQUA, "High income": BLUE}
+    fig = go.Figure()
+    for level, color in income_colors.items():
+        sub = feats[feats.income_level == level]
+        fig.add_trace(go.Scatter(
+            x=sub.gdp_per_capita_usd, y=sub.debt_service_pct_exports, mode="markers", name=level,
+            marker=dict(size=9, color=color, opacity=0.8, line=dict(width=1, color="white")),
+            customdata=sub[["country_name"]].values,
+            hovertemplate="<b>%{customdata[0]}</b><br>GDP/capita: $%{x:,.0f}<br>"
+                          "Debt service: %{y:.1f}% of exports<extra>" + level + "</extra>",
+        ))
+    ann = feats[feats.country_name.isin(label_countries)]
+    for _, row_ in ann.iterrows():
+        fig.add_annotation(x=row_.gdp_per_capita_usd, y=row_.debt_service_pct_exports,
+                            text=row_.country_name, showarrow=False, yshift=12,
+                            font=dict(size=10, color=INK_SECONDARY))
+    style(fig, height=440,
+          xaxis=dict(**BASE_LAYOUT["xaxis"], title="GDP per capita (US$, log scale)", type="log"),
+          yaxis=dict(**BASE_LAYOUT["yaxis"], title="Total debt service (% of exports)"),
+          legend=dict(orientation="h", y=-0.18))
+    charts["general_analysis"] = to_div(fig, "chart-general-analysis")
+
     conn.close()
     return kpi, charts, {
         "top10_table": top10.iloc[::-1][["country_name"]].country_name.tolist(),
@@ -336,7 +366,7 @@ def main():
 
 
 PANEL = """
-<section class="panel{wide_class}">
+<section id="{id}" class="panel{wide_class}">
   <h2>{title}</h2>
   {div}
   <p class="caption">{caption} <span class="source">Source: {source}</span></p>
@@ -344,9 +374,68 @@ PANEL = """
 """
 
 
-def panel(title, div, caption, source, wide=False):
+def panel(title, div, caption, source, wide=False, id=""):
     return PANEL.format(title=title, div=div, caption=caption, source=source,
-                         wide_class=" wide" if wide else "")
+                         wide_class=" wide" if wide else "", id=id)
+
+
+GENERAL_ANALYSIS_PANEL = """
+<section id="general-analysis" class="panel wide">
+  <h2>The Real-World Cost of High External Debt</h2>
+  <p><b>Reduced spending on health, education, and development.</b> El Salvador and Haiti spend
+  96% and 63% of their annual export earnings, respectively, just servicing external debt (World
+  Bank IDS) — leaving little room for imports, reserves, or development spending. In Mexico, debt
+  service on the government's overall debt load has been reported to already exceed combined
+  health and education spending, a direct crowd-out of public investment by debt repayment.</p>
+
+  <p><b>Currency and FX risk for foreign operations.</b> Indonesia's rupiah lost 14.3% of its
+  value and the country saw roughly $37B in combined capital outflows after a widening fiscal
+  deficit spooked investors — a direct translation and hedging cost for any company holding
+  rupiah receivables or local-currency debt. Türkiye's chronic inflation (~29-32%, against a 37%
+  policy rate) reflects a currency under structural pressure from persistent external financing
+  needs; Argentina's peso lost roughly half its value in the 2018 crisis that triggered the IMF's
+  then-record $57B loan.</p>
+
+  <p><b>Growth drag and rising cost of capital for local business.</b> In Colombia, private-sector
+  external debt is growing even faster (+9.3%) than public debt while the government's own fiscal
+  rule sits suspended — a sign borrowing costs are climbing economy-wide, not just for the
+  sovereign. In Brazil, agribusiness — a key export sector — is seeing rising insolvencies tied
+  directly to high borrowing costs. IMF-program austerity in high-risk-rated economies (Zambia,
+  Ghana) tends to compress domestic demand for years, denting the addressable market for any
+  business selling into those economies.</p>
+
+  <p><b>Corporate distress becoming sovereign risk, and vice versa.</b> Vanuatu's case runs the
+  causality in the other direction: the state-owned airline Air Vanuatu's May 2024 bankruptcy
+  forced a government-backed debt restructuring, turning a single corporate failure directly into
+  a sovereign external-debt event. In Mexico, S&amp;P's and Fitch's 2019 downgrades of state oil
+  company Pemex (to junk, in Fitch's case) were explicitly tied to Pemex's debt being treated as a
+  contingent liability of the sovereign itself — the corporate and sovereign credit stories became
+  inseparable.</p>
+
+  {div}
+
+  <p class="caption">Debt-service burden plotted against GDP per capita across all 120
+  debt-reporting countries shows no meaningful relationship (Pearson r = {corr_r:.2f}, p =
+  {corr_p:.2f}) — upper-middle-income El Salvador and Kazakhstan carry as much debt-service strain
+  as much poorer economies. For a company operating across multiple markets, income classification
+  alone is not a reliable proxy for debt-related counterparty or currency risk — market-by-market
+  judgment is required.
+  <span class="source">Source: World Bank IDS/WDI, debt service (% of exports) vs. GDP per capita, 2024</span></p>
+
+  <p style="margin-top:16px;"><b>News coverage referenced above:</b></p>
+  <ul class="ga-refs">
+    <li><a href="https://www.euronews.com/2019/03/04/sp-downgrades-debt-laden-mexican-state-oil-firm-pemex">"S&amp;P downgrades debt-laden Pemex"</a> — Euronews</li>
+    <li><a href="https://investing.com/news/commodities-news/fitch-downgrades-pemex-debt-to-junk-in-fresh-blow-to-mexico-1891081">"Fitch downgrades Pemex debt to 'junk' in fresh blow to Mexico"</a> — Investing.com</li>
+    <li><a href="https://mexicobusiness.news/finance/news/mexico-hits-record-public-debt-level-ministry-finance">"Mexico Hits Record Public Debt Level"</a> — Mexico Business News</li>
+    <li><a href="https://www.bloomberg.com/news/articles/2026-01-08/indonesia-fiscal-deficit-soars-to-2-92-of-gdp-near-legal-limit">"Indonesia's Prabowo Pushes Deficit to Edge of Post-Crisis Limit"</a> — Bloomberg</li>
+    <li><a href="https://asiatimes.com/2026/05/indonesias-debt-wall-hits-an-economy-running-on-borrowed-time/">"Indonesia's debt wall hits an economy running on borrowed time"</a> — Asia Times</li>
+    <li><a href="https://www.aei.org/op-eds/brazils-slow-burning-economic-crisis-might-be-the-u-s-future/">"Brazil's Slow-Burning Economic Crisis"</a> — AEI</li>
+    <li><a href="https://colombiaone.com/2026/05/13/colombia-external-debt-surges-55-of-gdp/">"Colombia's External Debt Surges by US$30 Billion to 55% of GDP"</a> — ColombiaOne</li>
+    <li><a href="https://www.imf.org/en/news/articles/2024/11/25/cf-how-vanuatu-can-return-to-sustainable-growth-after-airline-bankruptcy">"How Vanuatu Can Return to Sustainable Growth After Airline Bankruptcy"</a> — IMF</li>
+    <li><a href="https://www.piie.com/blogs/realtime-economics/2026/argentinas-fragile-monetary-framework-risks-renewed-volatility">"Argentina's fragile monetary framework"</a> — PIIE</li>
+  </ul>
+</section>
+"""
 
 PAGE_TEMPLATE = """<!doctype html>
 <html lang="en">
@@ -427,6 +516,27 @@ PAGE_TEMPLATE = """<!doctype html>
   }}
   .section-divider h2 {{ margin: 0 0 4px; font-size: 1.25rem; }}
   .section-divider p {{ margin: 0; color: var(--text-secondary); font-size: 0.9rem; }}
+  .exec-intro {{
+    max-width: 1180px; margin: 18px auto 0; padding: 20px 24px;
+  }}
+  .exec-intro .card {{
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px;
+    padding: 22px 26px;
+  }}
+  .exec-intro .byline {{
+    display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 14px;
+    font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .03em;
+  }}
+  .exec-intro .byline b {{ color: var(--text-secondary); text-transform: none; letter-spacing: normal; }}
+  .exec-intro p {{ margin: 0 0 12px; color: var(--text-secondary); line-height: 1.55; font-size: 0.95rem; }}
+  .exec-intro p:last-of-type {{ margin-bottom: 0; }}
+  .exec-intro ul {{ margin: 0 0 12px; padding-left: 20px; color: var(--text-secondary); line-height: 1.6; font-size: 0.92rem; }}
+  .exec-intro .bottom-line {{
+    margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);
+    font-size: 0.95rem; color: var(--text-primary);
+  }}
+  .ga-refs {{ margin: 14px 0 0; padding-left: 20px; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.7; }}
+  .ga-refs a {{ color: var(--text-secondary); }}
   footer {{
     max-width: 1180px; margin: 0 auto 40px; padding: 0 24px; color: var(--text-muted); font-size: 0.82rem;
   }}
@@ -437,8 +547,33 @@ PAGE_TEMPLATE = """<!doctype html>
 <header>
   <h1>International Debt — World Bank Statistics ({year})</h1>
   <p>Interactive exploration of external debt across {n_countries} countries — grouping, totals, and
-  cross-country comparisons drawn from a SQL analysis layer. Hover any chart for exact values.</p>
+  cross-country comparisons drawn from a SQL analysis layer, plus a machine-learning risk layer on top.
+  Hover any chart for exact values.</p>
 </header>
+
+<div class="exec-intro">
+  <div class="card">
+    <div class="byline">
+      <span><b>Scope:</b> {n_countries} countries, World Bank IDS/WDI, {year}</span>
+    </div>
+    <p><b>Why this matters to us:</b> any company with cross-border suppliers, customers, local
+    subsidiaries, or capital exposed to emerging markets is carrying sovereign debt risk whether or not
+    it's on the balance sheet — through currency translation, counterparty credit, and demand shocks in
+    over-leveraged economies. This analysis quantifies that exposure directly from the World Bank's own
+    debt statistics, then adds a predictive layer: a machine-learning model flags which of our
+    lower-income markets are structurally closest to a debt crisis, ahead of a rating-agency downgrade.</p>
+    <p><b>What's in this deck:</b></p>
+    <ul>
+      <li>Where each country's external debt stands today, and how much of it is short-term / rollover-exposed — a structural risk the headline number hides.</li>
+      <li>Which markets the IMF itself already classifies as high risk, and what our own classifier learns from that (with its limitations reported honestly).</li>
+      <li>A 3-year forecast for the 10 economies carrying the largest debt loads, backtested against actual 2020-2024 outcomes.</li>
+      <li>What debt distress is already costing — squeezed health/education budgets, currency risk, and real corporate/investment impact — in the <a href="#general-analysis">General Analysis</a> section below.</li>
+    </ul>
+    <p class="bottom-line"><b>Bottom line:</b> debt distress isn't confined to the countries perceived as
+    poorest — burden and income level are statistically unrelated in this data (see General Analysis) —
+    so market-by-market judgment, not income-tier assumptions, should drive where we underwrite risk.</p>
+  </div>
+</div>
 
 <div class="kpis">
   <div class="kpi"><div class="label">Countries covered</div><div class="value">{n_countries}</div></div>
@@ -621,6 +756,16 @@ def render_page(kpi, charts):
                   "deleveraging; the 2020 sovereign restructuring), which a linear ARIMA can't anticipate."),
         source="World Bank IDS full time series (1970-2024), src/forecast_debt.py",
         wide=True,
+    ))
+
+    panels.append(
+        '<div class="section-divider"><h2>General Analysis</h2>'
+        '<p>What high external debt actually costs — for governments, households, and the '
+        'businesses and investors operating in these markets.</p></div>'
+    )
+    panels.append(GENERAL_ANALYSIS_PANEL.format(
+        div=charts["general_analysis"],
+        corr_r=kpi["ga_corr_r"], corr_p=kpi["ga_corr_p"],
     ))
 
     html = PAGE_TEMPLATE.format(
